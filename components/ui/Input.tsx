@@ -22,7 +22,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className={clsx("text-sm font-medium text-foreground/80", labelClassName)}
+            className={clsx("text-sm font-medium text-foreground", labelClassName)}
           >
             {label}
           </label>

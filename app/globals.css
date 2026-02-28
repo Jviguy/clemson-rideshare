@@ -40,6 +40,7 @@
 }
 
 @theme inline {
+  @variant dark (&:where(.dark, .dark *));
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-clemson-orange: var(--clemson-orange);

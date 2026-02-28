@@ -60,7 +60,7 @@ function TabsList({ children, className }: TabsListProps) {
     <div
       role="tablist"
       className={clsx(
-        "inline-flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-900/50 p-1",
+        "inline-flex items-center gap-1 rounded-lg p-1",
         className
       )}
     >
@@ -94,10 +94,10 @@ function TabsTrigger({ value, children, className }: TabsTriggerProps) {
       aria-selected={isActive}
       onClick={handleClick}
       className={clsx(
-        "inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer",
+        "inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-all cursor-pointer",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clemson-orange/50 focus-visible:ring-offset-1",
         isActive
-          ? "bg-background text-foreground shadow-sm"
+          ? "bg-clemson-orange text-white shadow-sm"
           : "text-gray-500 hover:text-foreground/80 dark:text-gray-400 dark:hover:text-gray-200",
         className
       )}

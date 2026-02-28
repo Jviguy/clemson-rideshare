@@ -7,6 +7,7 @@ import { Menu, X, Car, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { signOutAction } from "@/lib/actions/auth";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { useTheme } from "@/components/layout/ThemeProvider";
 import { clsx } from "clsx";
 
 interface NavbarClientProps {
@@ -17,34 +18,11 @@ export function NavbarClient({ user }: NavbarClientProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
 
   const isHome = pathname === "/";
-
-  // Initial theme setup
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const isDark = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  };
+  const darkMode = theme === "dark";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -218,12 +196,12 @@ export function NavbarClient({ user }: NavbarClientProps) {
 
           {/* Theme Toggle */}
           <button
-            onClick={toggleDarkMode}
+            onClick={toggleTheme}
             className={clsx(
               "p-2 rounded-lg transition-colors cursor-pointer ml-1",
               isTransparent
-                ? "text-white hover:bg-white/10"
-                : "text-foreground hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                ? "text-white/90 hover:text-white hover:bg-white/10"
+                : "text-foreground hover:text-clemson-orange hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
             aria-label="Toggle dark mode"
           >
@@ -234,11 +212,11 @@ export function NavbarClient({ user }: NavbarClientProps) {
         {/* Mobile hamburger button */}
         <div className="flex items-center gap-1 md:hidden">
           <button
-            onClick={toggleDarkMode}
+            onClick={toggleTheme}
             className={clsx(
               "p-2 rounded-lg transition-colors cursor-pointer",
               isTransparent
-                ? "text-white hover:bg-white/10"
+                ? "text-white/90 hover:text-white hover:bg-white/10"
                 : "text-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
             aria-label="Toggle dark mode"
