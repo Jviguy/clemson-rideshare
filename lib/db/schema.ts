@@ -7,25 +7,8 @@ import {
   timestamp,
   boolean,
   doublePrecision,
-  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-
-// ── Enums ──
-export const rideStatusEnum = pgEnum("ride_status", [
-  "open",
-  "full",
-  "in_progress",
-  "completed",
-  "cancelled",
-]);
-
-export const requestStatusEnum = pgEnum("request_status", [
-  "pending",
-  "accepted",
-  "rejected",
-  "cancelled",
-]);
 
 // ── Users ──
 export const users = pgTable("users", {
@@ -53,7 +36,7 @@ export const rides = pgTable("rides", {
   totalSeats: integer("total_seats").notNull(),
   availableSeats: integer("available_seats").notNull(),
   pricePerSeat: integer("price_per_seat").notNull(), // cents
-  status: rideStatusEnum("status").default("open").notNull(),
+  status: text("status").default("open").notNull().$type<"open" | "full" | "in_progress" | "completed" | "cancelled">(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -66,7 +49,7 @@ export const rideRequests = pgTable("ride_requests", {
   riderId: uuid("rider_id")
     .references(() => users.id)
     .notNull(),
-  status: requestStatusEnum("status").default("pending").notNull(),
+  status: text("status").default("pending").notNull().$type<"pending" | "accepted" | "rejected" | "cancelled">(),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   amountCents: integer("amount_cents").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -319,6 +319,24 @@ export default $config({
         stripeWebhookSecret,
         stripePublishableKey,
       ],
+      permissions: [
+        {
+          actions: [
+            "geo:SearchPlaceIndexForSuggestions",
+            "geo:SearchPlaceIndexForText",
+            "geo:GetPlace",
+            "geo:CalculateRoute",
+            "geo:GetMap*",
+          ],
+          resources: ["*"],
+        },
+        {
+          actions: [
+            "events:PutEvents",
+          ],
+          resources: ["*"],
+        },
+      ],
       environment: {
         COGNITO_USER_POOL_ID: userPool.id,
         COGNITO_CLIENT_ID: userPoolClient.id,

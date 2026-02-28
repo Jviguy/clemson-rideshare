@@ -73,6 +73,9 @@ interface RideDetailClientProps {
   ride: RideDetailData;
   isDriver: boolean;
   hasExistingRequest: boolean;
+  routeGeometry?: [number, number][];
+  routeDistance?: number;
+  routeDuration?: number;
 }
 
 function formatPrice(cents: number): string {
@@ -112,6 +115,9 @@ export function RideDetailClient({
   ride,
   isDriver,
   hasExistingRequest,
+  routeGeometry,
+  routeDistance,
+  routeDuration,
 }: RideDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -206,8 +212,33 @@ export function RideDetailClient({
       <RideMap
         origin={{ lat: ride.originLat, lng: ride.originLng }}
         destination={{ lat: ride.destLat, lng: ride.destLng }}
+        routeGeometry={routeGeometry}
         className="h-72 sm:h-96"
       />
+
+      {/* Route stats */}
+      {(routeDistance != null || routeDuration != null) && (
+        <div className="flex items-center gap-6 rounded-xl bg-gray-50 px-5 py-3">
+          {routeDistance != null && (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-clemson-orange" />
+              <span className="font-medium">{routeDistance.toFixed(1)} km</span>
+              <span className="text-gray-400">({(routeDistance * 0.621371).toFixed(1)} mi)</span>
+            </div>
+          )}
+          {routeDuration != null && (
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-clemson-purple" />
+              <span className="font-medium">
+                {routeDuration >= 60
+                  ? `${Math.floor(routeDuration / 60)}h ${Math.round(routeDuration % 60)}m`
+                  : `${Math.round(routeDuration)} min`}
+              </span>
+              <span className="text-gray-400">drive</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main info - left column */}
