@@ -119,7 +119,7 @@ export function NavbarClient({ user }: NavbarClientProps) {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <NotificationBell />
+              <NotificationBell isTransparent={isTransparent} />
               <div className="relative user-dropdown">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -273,7 +273,7 @@ export function NavbarClient({ user }: NavbarClientProps) {
               {user ? (
                 <div className="flex items-center justify-between px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <NotificationBell />
+                    <NotificationBell isTransparent={false} />
                     <span className="text-sm font-medium text-foreground">
                       {user.name}
                     </span>
