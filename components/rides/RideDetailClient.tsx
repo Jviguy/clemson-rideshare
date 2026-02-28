@@ -141,7 +141,7 @@ export function RideDetailClient({
     startTransition(async () => {
       const result = await requestToJoinRide(ride.id);
       if (result.success) {
-        toast("success", "Your request has been sent to the driver!");
+        toast("success", "Request sent! The driver will review it.");
         router.refresh();
       } else {
         toast("error", result.error ?? "Failed to send request.");
@@ -592,6 +592,7 @@ export function RideDetailClient({
           )}
         </div>
       </div>
+
     </div>
   );
 }

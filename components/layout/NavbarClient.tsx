@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { signOutAction } from "@/lib/actions/auth";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 interface NavbarClientProps {
   user: { name: string; email: string } | null;
@@ -45,6 +46,7 @@ export function NavbarClient({ user }: NavbarClientProps) {
       <div className="hidden md:flex items-center gap-3">
         {user ? (
           <>
+            <NotificationBell />
             <span className="text-sm font-medium text-gray-700">
               {user.name}
             </span>
@@ -113,9 +115,12 @@ export function NavbarClient({ user }: NavbarClientProps) {
             <div className="border-t border-gray-200 mt-2 pt-2">
               {user ? (
                 <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    {user.name}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <NotificationBell />
+                    <span className="text-sm font-medium text-gray-700">
+                      {user.name}
+                    </span>
+                  </div>
                   <form action={signOutAction}>
                     <Button variant="ghost" size="sm" type="submit">
                       Sign Out

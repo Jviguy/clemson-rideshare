@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/Toast";
+import { PaymentModal } from "@/components/rides/PaymentModal";
 import { cancelRideRequest } from "@/lib/actions/rides";
 
 // Types based on server action return shapes
@@ -49,6 +50,7 @@ interface RiderRide {
   requestId: string;
   requestStatus: string;
   amountCents: number;
+  hasPaid: boolean;
   requestCreatedAt: Date | string;
   ride: {
     id: string;
@@ -124,6 +126,17 @@ export function MyRidesClient({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [payingRequest, setPayingRequest] = useState<{
+    requestId: string;
+    rideId: string;
+    pricePerSeat: number;
+  } | null>(null);
+
+  function handlePaymentSuccess() {
+    setPayingRequest(null);
+    toast("success", "Payment confirmed! You're all set for the ride.");
+    router.refresh();
+  }
 
   function handleCancelRequest(requestId: string) {
     setCancellingId(requestId);
@@ -340,20 +353,39 @@ export function MyRidesClient({
                       >
                         View ride
                       </Link>
-                      {canCancel && (
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          loading={
-                            isPending && cancellingId === item.requestId
-                          }
-                          disabled={isPending}
-                          onClick={() => handleCancelRequest(item.requestId)}
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          Cancel
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {item.requestStatus === "accepted" && !item.hasPaid && (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            disabled={isPending}
+                            onClick={() =>
+                              setPayingRequest({
+                                requestId: item.requestId,
+                                rideId: item.ride.id,
+                                pricePerSeat: item.ride.pricePerSeat,
+                              })
+                            }
+                          >
+                            <DollarSign className="h-3.5 w-3.5" />
+                            Confirm & Pay
+                          </Button>
+                        )}
+                        {canCancel && (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            loading={
+                              isPending && cancellingId === item.requestId
+                            }
+                            disabled={isPending}
+                            onClick={() => handleCancelRequest(item.requestId)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -362,6 +394,16 @@ export function MyRidesClient({
           </div>
         )}
       </TabsContent>
+
+      {payingRequest && (
+        <PaymentModal
+          open={true}
+          onClose={() => setPayingRequest(null)}
+          requestId={payingRequest.requestId}
+          pricePerSeat={payingRequest.pricePerSeat}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </Tabs>
   );
 }

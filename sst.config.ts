@@ -139,6 +139,12 @@ export default $config({
       }
     );
 
+    // Derive the RDS cluster identifier from its ARN
+    // ARN format: arn:aws:rds:region:account:cluster:identifier
+    const dbClusterId = database.clusterArn.apply(
+      (arn) => arn.split(":cluster:")[1] ?? arn.split(":").pop() ?? ""
+    );
+
     // ── CloudWatch Dashboard ──
     new aws.cloudwatch.Dashboard("ClemsonDashboard", {
       dashboardName: `clemson-rideshare-${$app.stage}`,
@@ -256,13 +262,13 @@ export default $config({
                   "AWS/RDS",
                   "ServerlessDatabaseCapacity",
                   "DBClusterIdentifier",
-                  database.clusterIdentifier,
+                  dbClusterId,
                 ],
                 [
                   "AWS/RDS",
                   "ACUUtilization",
                   "DBClusterIdentifier",
-                  database.clusterIdentifier,
+                  dbClusterId,
                 ],
               ],
               period: 300,
@@ -283,7 +289,7 @@ export default $config({
                   "AWS/RDS",
                   "DatabaseConnections",
                   "DBClusterIdentifier",
-                  database.clusterIdentifier,
+                  dbClusterId,
                 ],
               ],
               period: 300,
@@ -338,6 +344,7 @@ export default $config({
         },
       ],
       environment: {
+        NODE_ENV: "production",
         COGNITO_USER_POOL_ID: userPool.id,
         COGNITO_CLIENT_ID: userPoolClient.id,
         LOCATION_PLACE_INDEX: placeIndex.indexName,

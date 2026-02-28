@@ -14,6 +14,10 @@ import {
   cancelPaymentHold,
 } from "@/lib/stripe";
 import { eq, and, desc, sql, gte, like, asc, or } from "drizzle-orm";
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+} from "@aws-sdk/client-eventbridge";
 
 // ── Types ──
 
@@ -69,6 +73,28 @@ interface RideFilters {
   destination?: string;
   date?: string;
   origin?: string;
+}
+
+// ── EventBridge helper (fire-and-forget) ──
+
+async function publishEvent(type: string, detail: Record<string, string>) {
+  try {
+    const client = new EventBridgeClient({});
+    await client.send(
+      new PutEventsCommand({
+        Entries: [
+          {
+            Source: "clemson-rideshare",
+            DetailType: type,
+            Detail: JSON.stringify({ ...detail, type }),
+            EventBusName: process.env.EVENT_BUS_NAME,
+          },
+        ],
+      })
+    );
+  } catch (err) {
+    console.error("publishEvent error:", err);
+  }
 }
 
 // ── Internal helper ──
@@ -190,6 +216,12 @@ export async function createRide(
         status: "open",
       })
       .returning();
+
+    publishEvent("ride.created", {
+      rideId: inserted[0].id,
+      driverId: user.id,
+      departureTime: parsedDepartureTime.toISOString(),
+    });
 
     return { success: true, rideId: inserted[0].id };
   } catch (err: unknown) {
@@ -397,31 +429,104 @@ export async function requestToJoinRide(
       return { success: false, error: "You have already requested to join this ride." };
     }
 
-    // Create Stripe payment hold
-    const paymentIntent = await createPaymentHold(
-      ride.pricePerSeat,
-      user.email,
-      rideId,
-      user.id
-    );
-
-    // Insert ride request
+    // Insert ride request (no payment yet — payment happens after driver accepts)
     await db.insert(rideRequests).values({
       rideId,
       riderId: user.id,
       status: "pending",
-      stripePaymentIntentId: paymentIntent.id,
       amountCents: ride.pricePerSeat,
     });
+
+    publishEvent("ride.request.submitted", {
+      rideId,
+      riderId: user.id,
+      driverId: ride.driverId,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("requestToJoinRide error:", err);
+    const message =
+      err instanceof Error ? err.message : "Failed to request ride.";
+    return { success: false, error: message };
+  }
+}
+
+// ── 4b. Confirm Ride Payment (rider pays after driver accepts) ──
+
+export async function confirmRidePayment(
+  requestId: string
+): Promise<JoinRideResult> {
+  try {
+    const user = await getOrCreateUser();
+    if (!user) {
+      return { success: false, error: "You must be signed in." };
+    }
+
+    if (!requestId) {
+      return { success: false, error: "Request ID is required." };
+    }
+
+    // Fetch the request
+    const requestResults = await db
+      .select()
+      .from(rideRequests)
+      .where(eq(rideRequests.id, requestId))
+      .limit(1);
+
+    if (requestResults.length === 0) {
+      return { success: false, error: "Request not found." };
+    }
+
+    const request = requestResults[0];
+
+    if (request.riderId !== user.id) {
+      return { success: false, error: "You can only pay for your own requests." };
+    }
+
+    if (request.status !== "accepted") {
+      return { success: false, error: "This request is not ready for payment." };
+    }
+
+    if (request.stripePaymentIntentId) {
+      return { success: false, error: "Payment has already been set up." };
+    }
+
+    // Fetch the ride for price info
+    const rideResults = await db
+      .select()
+      .from(rides)
+      .where(eq(rides.id, request.rideId))
+      .limit(1);
+
+    if (rideResults.length === 0) {
+      return { success: false, error: "Ride not found." };
+    }
+
+    const ride = rideResults[0];
+
+    // Create Stripe payment hold
+    const paymentIntent = await createPaymentHold(
+      ride.pricePerSeat,
+      user.email,
+      ride.id,
+      user.id
+    );
+
+    // Update request with payment intent
+    await db
+      .update(rideRequests)
+      .set({ stripePaymentIntentId: paymentIntent.id })
+      .where(eq(rideRequests.id, requestId));
 
     return {
       success: true,
       clientSecret: paymentIntent.client_secret ?? undefined,
     };
   } catch (err: unknown) {
-    console.error("requestToJoinRide error:", err);
+    console.error("confirmRidePayment error:", err);
     const message =
-      err instanceof Error ? err.message : "Failed to request ride.";
+      err instanceof Error ? err.message : "Failed to set up payment.";
     return { success: false, error: message };
   }
 }
@@ -501,12 +606,17 @@ export async function acceptRideRequest(
       .set(rideUpdate)
       .where(eq(rides.id, ride.id));
 
-    // Create notification for the rider
+    // Create notification for the rider — tell them to confirm with payment
     await db.insert(notifications).values({
       userId: request.riderId,
       rideId: ride.id,
       type: "request_accepted",
-      message: `Your request to join the ride from ${ride.originName} to ${ride.destName} has been accepted.`,
+      message: `Your request for ${ride.originName} → ${ride.destName} was accepted! Go to My Rides to confirm & pay.`,
+    });
+
+    publishEvent("ride.request.accepted", {
+      rideId: ride.id,
+      riderId: request.riderId,
     });
 
     return { success: true };
@@ -757,6 +867,8 @@ export async function completeRide(
       });
     }
 
+    publishEvent("ride.completed", { rideId });
+
     return { success: true };
   } catch (err: unknown) {
     console.error("completeRide error:", err);
@@ -913,6 +1025,7 @@ export async function getMyRidesAsRider() {
         requestId: rideRequests.id,
         requestStatus: rideRequests.status,
         amountCents: rideRequests.amountCents,
+        hasPaid: sql<boolean>`${rideRequests.stripePaymentIntentId} IS NOT NULL`.as("has_paid"),
         requestCreatedAt: rideRequests.createdAt,
         ride: {
           id: rides.id,

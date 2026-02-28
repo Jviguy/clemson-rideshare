@@ -1,8 +1,8 @@
 import Stripe from "stripe";
+import { Resource } from "sst";
 
 function getStripeKey(): string {
-  // SST binds secrets as environment variables
-  return process.env.STRIPE_SECRET_KEY || process.env.SST_SECRET_STRIPE_SECRET_KEY || "";
+  return Resource.StripeSecretKey.value;
 }
 
 let _stripe: Stripe | null = null;
