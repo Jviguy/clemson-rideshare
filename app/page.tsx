@@ -59,7 +59,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-clemson-orange via-clemson-orange-dark to-clemson-purple">
+      <section className="relative overflow-hidden bg-gradient-to-br from-clemson-purple via-clemson-purple-dark to-clemson-orange">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2240%22%20fill%3D%22none%22%20stroke%3D%22rgba(255%2C255%2C255%2C0.05)%22%20stroke-width%3D%221%22%2F%3E%3C%2Fsvg%3E')] opacity-30" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
           <div className="flex flex-col items-center text-center">
@@ -72,18 +72,13 @@ export default function LandingPage() {
               gas costs, and travel with fellow Tigers.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-              <Link href="/rides">
-                <Button size="lg" variant="primary" className="bg-white text-clemson-orange hover:bg-gray-100 font-semibold shadow-lg px-8">
-                  Find a Ride
-                </Button>
-              </Link>
-              <Link href="/post-ride">
+              <Link href="/signup">
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="border-2 border-white text-white hover:bg-white/10 font-semibold px-8"
+                  variant="primary"
+                  className="font-bold shadow-2xl px-10 transition-all hover:scale-105 border-2 border-white/20"
                 >
-                  Offer a Ride
+                  Get Started
                 </Button>
               </Link>
             </div>
@@ -92,10 +87,10 @@ export default function LandingPage() {
       </section>
 
       {/* How it Works Section */}
-      <section className="bg-white py-20 sm:py-24">
+      <section className="bg-background py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
               How it Works
             </h2>
             <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
@@ -116,7 +111,7 @@ export default function LandingPage() {
                 <div className="mt-2 flex h-8 w-8 items-center justify-center rounded-full bg-clemson-purple text-sm font-bold text-white">
                   {index + 1}
                 </div>
-                <h3 className="mt-4 text-xl font-semibold text-gray-900">
+                <h3 className="mt-4 text-xl font-semibold text-foreground">
                   {step.title}
                 </h3>
                 <p className="mt-2 text-gray-500 leading-relaxed max-w-xs">
@@ -132,7 +127,7 @@ export default function LandingPage() {
       <section className="bg-gray-50 py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
               Built for Clemson Students
             </h2>
             <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
@@ -145,12 +140,12 @@ export default function LandingPage() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-2xl bg-white p-8 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                className="rounded-2xl bg-background p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-clemson-purple/10">
                   <feature.icon className="h-6 w-6 text-clemson-purple" />
                 </div>
-                <h3 className="mt-5 text-lg font-semibold text-gray-900">
+                <h3 className="mt-5 text-lg font-semibold text-foreground">
                   {feature.title}
                 </h3>
                 <p className="mt-2 text-gray-500 leading-relaxed">

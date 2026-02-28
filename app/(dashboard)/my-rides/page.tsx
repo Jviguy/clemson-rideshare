@@ -10,7 +10,7 @@ export default async function MyRidesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">My Rides</h1>
+        <h1 className="text-2xl font-bold text-foreground">My Rides</h1>
         <p className="mt-1 text-gray-500">
           Manage your posted rides and ride requests.
         </p>

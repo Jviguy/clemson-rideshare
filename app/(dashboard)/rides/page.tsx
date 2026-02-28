@@ -34,12 +34,13 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
 
       {/* Filter bar */}
       <form
-        className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+        className="mb-8 rounded-xl border border-gray-100 dark:border-gray-800 bg-background p-4 shadow-sm"
       >
         <div className="flex flex-col sm:flex-row items-end gap-3">
           <div className="flex-1 w-full">
             <Input
               label="Destination"
+              labelClassName="text-foreground dark:text-gray-300"
               name="destination"
               placeholder="Search by destination..."
               defaultValue={destination}
@@ -50,6 +51,7 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
           <div className="w-full sm:w-48">
             <Input
               label="Date"
+              labelClassName="text-foreground dark:text-gray-300"
               name="date"
               type="date"
               defaultValue={date}

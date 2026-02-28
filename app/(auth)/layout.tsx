@@ -1,3 +1,4 @@
+import { Car } from "lucide-react";
 import type { ReactNode } from "react";
 
 export const metadata = {
@@ -7,7 +8,7 @@ export const metadata = {
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-clemson-orange via-clemson-orange-dark to-clemson-purple overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-clemson-purple via-clemson-purple-dark to-clemson-orange overflow-hidden">
       {/* Decorative paw prints */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {/* Large paw - top right */}
@@ -53,19 +54,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="relative z-10 w-full max-w-md px-4 py-8">
         {/* Branding header */}
         <div className="mb-8 text-center">
-          {/* Tiger paw icon */}
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 shadow-lg backdrop-blur-sm">
-            <svg
-              className="h-10 w-10 text-white"
-              viewBox="0 0 200 200"
-              fill="currentColor"
-            >
-              <ellipse cx="100" cy="140" rx="42" ry="52" />
-              <ellipse cx="56" cy="70" rx="18" ry="24" transform="rotate(-15 56 70)" />
-              <ellipse cx="144" cy="70" rx="18" ry="24" transform="rotate(15 144 70)" />
-              <ellipse cx="40" cy="112" rx="16" ry="20" transform="rotate(-30 40 112)" />
-              <ellipse cx="160" cy="112" rx="16" ry="20" transform="rotate(30 160 112)" />
-            </svg>
+          {/* Logo icon */}
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-clemson-orange shadow-lg">
+            <Car className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
             Clemson Rideshare

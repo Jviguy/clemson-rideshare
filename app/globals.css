@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #1a1a2e;
+  --foreground: #0f172a; /* Slate 900 for better readability */
   --clemson-orange: #F56600;
   --clemson-purple: #522D80;
   --clemson-orange-light: #FF8533;
@@ -22,6 +22,21 @@
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
+}
+
+.dark {
+  --background: #020617; /* Slate 950 */
+  --foreground: #f8fafc; /* Slate 50 */
+  --gray-50: #0f172a;
+  --gray-100: #1e293b;
+  --gray-200: #334155;
+  --gray-300: #475569;
+  --gray-400: #64748b;
+  --gray-500: #94a3b8;
+  --gray-600: #cbd5e1;
+  --gray-700: #e2e8f0;
+  --gray-800: #f1f5f9;
+  --gray-900: #ffffff;
 }
 
 @theme inline {
