@@ -40,7 +40,6 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
           <div className="flex-1 w-full">
             <Input
               label="Destination"
-              labelClassName="text-foreground dark:text-gray-300"
               name="destination"
               placeholder="Search by destination..."
               defaultValue={destination}
@@ -51,7 +50,6 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
           <div className="w-full sm:w-48">
             <Input
               label="Date"
-              labelClassName="text-foreground dark:text-gray-300"
               name="date"
               type="date"
               defaultValue={date}
@@ -102,11 +100,11 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
         </div>
       ) : (
         /* Empty state */
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-16 px-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-transparent py-16 px-6 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-transparent mb-4">
             <Car className="h-8 w-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-foreground">
             No rides found
           </h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">

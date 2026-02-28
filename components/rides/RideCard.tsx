@@ -78,7 +78,7 @@ export function RideCard({
       : ride.departureTime;
 
   const content = (
-    <Card className="group overflow-hidden transition-shadow hover:shadow-md bg-gray-50/50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800">
+    <Card className="group overflow-hidden transition-shadow hover:shadow-md bg-transparent border-gray-200 dark:border-gray-800">
       {showMap && (
         <div className="pointer-events-none">
           <RideMap

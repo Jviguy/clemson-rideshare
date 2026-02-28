@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, CheckCircle2, XCircle, AlertTriangle, Car, UserPlus, UserMinus, Clock, Navigation } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { clsx } from "clsx";
 import {
   getNotifications,
   getUnreadCount,
@@ -44,7 +45,11 @@ const typeColor: Record<string, string> = {
 
 const POLL_INTERVAL = 30_000;
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  isTransparent?: boolean;
+}
+
+export function NotificationBell({ isTransparent }: NotificationBellProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
@@ -100,21 +105,26 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={handleToggle}
-        className="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+        className={clsx(
+          "relative rounded-lg p-2 transition-colors cursor-pointer",
+          isTransparent
+            ? "text-white/90 hover:text-white hover:bg-white/10"
+            : "text-foreground hover:text-clemson-orange hover:bg-gray-100 dark:hover:bg-gray-800"
+        )}
         aria-label="Notifications"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-clemson-orange px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-clemson-orange px-1 text-[10px] font-bold text-white ring-2 ring-background">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl z-50">
-          <div className="border-b border-gray-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-gray-900">
+        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-background shadow-xl z-50 animate-in fade-in zoom-in duration-200">
+          <div className="border-b border-gray-100 dark:border-gray-800 px-4 py-3">
+            <h3 className="text-sm font-semibold text-foreground">
               Notifications
             </h3>
           </div>
@@ -124,7 +134,7 @@ export function NotificationBell() {
               No notifications yet
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-gray-800">
               {items.map((item) => {
                 const Icon = typeIcon[item.type] ?? Bell;
                 const color = typeColor[item.type] ?? "text-gray-400";
@@ -138,22 +148,24 @@ export function NotificationBell() {
                     key={item.id}
                     type="button"
                     onClick={() => !item.read && handleMarkRead(item.id)}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cursor-pointer ${
+                    className={clsx(
+                      "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cursor-pointer",
                       item.read
-                        ? "bg-white"
-                        : "bg-clemson-orange/5 hover:bg-clemson-orange/10"
-                    }`}
+                        ? "bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        : "bg-clemson-orange/5 dark:bg-clemson-orange/10 hover:bg-clemson-orange/10 dark:hover:bg-clemson-orange/20"
+                    )}
                   >
                     <Icon
-                      className={`h-4 w-4 mt-0.5 shrink-0 ${color}`}
+                      className={clsx("h-4 w-4 mt-0.5 shrink-0", color)}
                     />
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-sm ${
+                        className={clsx(
+                          "text-sm",
                           item.read
                             ? "text-gray-500"
-                            : "text-gray-900 font-medium"
-                        }`}
+                            : "text-foreground font-medium"
+                        )}
                       >
                         {item.message}
                       </p>
