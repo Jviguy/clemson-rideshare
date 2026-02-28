@@ -41,9 +41,10 @@ export function NavbarClient({ user }: NavbarClientProps) {
     }
 
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      // Stay transparent through the purple hero section (~80% of viewport)
+      setScrolled(window.scrollY > window.innerHeight * 0.8);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isHome]);
 

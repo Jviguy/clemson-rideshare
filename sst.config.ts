@@ -359,6 +359,16 @@ export default $config({
       },
     });
 
+    // ── Realtime (IoT Core) ──
+    const realtime = new sst.aws.Realtime("Realtime", {
+      authorizer: {
+        handler: "functions/realtime-auth.handler",
+        runtime: "nodejs22.x",
+        link: [database],
+        timeout: "10 seconds",
+      },
+    });
+
     // ── Next.js Site ──
     const site = new sst.aws.Nextjs("ClemsonSite", {
       link: [
@@ -366,6 +376,7 @@ export default $config({
         stripeSecretKey,
         stripeWebhookSecret,
         stripePublishableKey,
+        realtime,
       ],
       permissions: [
         {
@@ -384,6 +395,12 @@ export default $config({
           ],
           resources: ["*"],
         },
+        {
+          actions: [
+            "iot:Publish",
+          ],
+          resources: ["*"],
+        },
       ],
       environment: {
         NODE_ENV: "production",
@@ -396,6 +413,14 @@ export default $config({
         DATABASE_ARN: database.clusterArn,
         DATABASE_SECRET_ARN: database.secretArn,
         DATABASE_NAME: "clemson_rideshare",
+        SST_APP_NAME: $app.name,
+        SST_STAGE: $app.stage,
+        REALTIME_ENDPOINT: realtime.endpoint,
+        REALTIME_AUTHORIZER: realtime.authorizer,
+        NEXT_PUBLIC_REALTIME_ENDPOINT: realtime.endpoint,
+        NEXT_PUBLIC_REALTIME_AUTHORIZER: realtime.authorizer,
+        NEXT_PUBLIC_SST_APP_NAME: $app.name,
+        NEXT_PUBLIC_SST_STAGE: $app.stage,
       },
     });
 
@@ -403,6 +428,8 @@ export default $config({
       siteUrl: site.url,
       userPoolId: userPool.id,
       userPoolClientId: userPoolClient.id,
+      realtimeEndpoint: realtime.endpoint,
+      realtimeAuthorizer: realtime.authorizer,
     };
   },
 });

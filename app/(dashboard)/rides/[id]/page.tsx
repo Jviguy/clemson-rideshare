@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getRideById } from "@/lib/actions/rides";
+import { getRideById, getRideMessages } from "@/lib/actions/rides";
 import { getSession } from "@/lib/auth/cognito";
 import { RideDetailClient } from "@/components/rides/RideDetailClient";
 import { db } from "@/lib/db";
@@ -44,6 +44,7 @@ export default async function RideDetailPage({ params }: RideDetailPageProps) {
 
   let isDriver = false;
   let hasExistingRequest = false;
+  let isAcceptedRider = false;
 
   if (userResults.length > 0) {
     const currentUser = userResults[0];
@@ -53,7 +54,15 @@ export default async function RideDetailPage({ params }: RideDetailPageProps) {
         r.rider.id === currentUser.id &&
         (r.status === "pending" || r.status === "accepted")
     );
+    isAcceptedRider = ride.requests.some(
+      (r) => r.rider.id === currentUser.id && r.status === "accepted"
+    );
   }
+
+  // Fetch messages if user has access (driver or accepted rider)
+  const messages = (isDriver || isAcceptedRider)
+    ? await getRideMessages(id)
+    : [];
 
   return (
     <div>
@@ -72,6 +81,13 @@ export default async function RideDetailPage({ params }: RideDetailPageProps) {
         routeGeometry={routeResult?.geometry ?? undefined}
         routeDistance={routeResult?.distance}
         routeDuration={routeResult?.duration}
+        canMessage={isDriver || isAcceptedRider}
+        initialMessages={messages}
+        currentUser={
+          userResults.length > 0
+            ? { id: userResults[0].id, name: userResults[0].name, email: userResults[0].email }
+            : undefined
+        }
       />
     </div>
   );

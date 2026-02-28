@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Search, CalendarDays, Car } from "lucide-react";
+import { Car } from "lucide-react";
 import { getRides } from "@/lib/actions/rides";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { RideCard } from "@/components/rides/RideCard";
+import { RideSearchBar } from "@/components/rides/RideSearchBar";
 
 interface RidesPageProps {
   searchParams: Promise<{
@@ -26,64 +26,14 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
     <div>
       {/* Page header */}
       <div className="mb-8 flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-gray-900">Browse Rides</h1>
+        <h1 className="text-2xl font-bold text-foreground">Browse Rides</h1>
         <p className="text-gray-500">
           Find available rides posted by fellow Clemson students.
         </p>
       </div>
 
-      {/* Filter bar */}
-      <form
-        className="mb-8 rounded-xl border border-gray-100 dark:border-gray-800 bg-background p-4 shadow-sm"
-      >
-        <div className="flex flex-col sm:flex-row items-end gap-3">
-          <div className="flex-1 w-full">
-            <Input
-              label="Destination"
-              name="destination"
-              placeholder="Search by destination..."
-              defaultValue={destination}
-              iconLeft={<Search className="h-4 w-4" />}
-            />
-          </div>
-
-          <div className="w-full sm:w-48">
-            <Input
-              label="Date"
-              name="date"
-              type="date"
-              defaultValue={date}
-              iconLeft={<CalendarDays className="h-4 w-4" />}
-            />
-          </div>
-
-          <Button type="submit" className="w-full sm:w-auto">
-            <Search className="h-4 w-4" />
-            Search
-          </Button>
-        </div>
-      </form>
-
-      {/* Active filters indicator */}
-      {(destination || date) && (
-        <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-          <span>
-            Showing results
-            {destination && (
-              <> for <span className="font-medium text-gray-900">&quot;{destination}&quot;</span></>
-            )}
-            {date && (
-              <> on <span className="font-medium text-gray-900">{date}</span></>
-            )}
-          </span>
-          <Link
-            href="/rides"
-            className="ml-2 text-clemson-orange hover:text-clemson-orange-dark font-medium transition-colors"
-          >
-            Clear filters
-          </Link>
-        </div>
-      )}
+      {/* Search bar with autocomplete */}
+      <RideSearchBar />
 
       {/* Results grid */}
       {rides.length > 0 ? (

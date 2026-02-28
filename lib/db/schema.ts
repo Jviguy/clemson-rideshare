@@ -74,11 +74,25 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── Ride Messages ──
+export const rideMessages = pgTable("ride_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  rideId: uuid("ride_id")
+    .references(() => rides.id)
+    .notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ── Relations ──
 export const usersRelations = relations(users, ({ many }) => ({
   rides: many(rides),
   rideRequests: many(rideRequests),
   notifications: many(notifications),
+  rideMessages: many(rideMessages),
 }));
 
 export const ridesRelations = relations(rides, ({ one, many }) => ({
@@ -88,6 +102,7 @@ export const ridesRelations = relations(rides, ({ one, many }) => ({
   }),
   requests: many(rideRequests),
   notifications: many(notifications),
+  messages: many(rideMessages),
 }));
 
 export const rideRequestsRelations = relations(rideRequests, ({ one }) => ({
@@ -97,6 +112,17 @@ export const rideRequestsRelations = relations(rideRequests, ({ one }) => ({
   }),
   rider: one(users, {
     fields: [rideRequests.riderId],
+    references: [users.id],
+  }),
+}));
+
+export const rideMessagesRelations = relations(rideMessages, ({ one }) => ({
+  ride: one(rides, {
+    fields: [rideMessages.rideId],
+    references: [rides.id],
+  }),
+  user: one(users, {
+    fields: [rideMessages.userId],
     references: [users.id],
   }),
 }));

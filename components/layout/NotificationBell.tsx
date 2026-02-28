@@ -1,14 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, CheckCircle2, XCircle, AlertTriangle, Car, UserPlus, UserMinus, Clock, Navigation } from "lucide-react";
+import { Bell, CheckCircle2, XCircle, AlertTriangle, Car, UserPlus, UserMinus, Clock, Navigation, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { clsx } from "clsx";
-import {
-  getNotifications,
-  getUnreadCount,
-  markNotificationAsRead,
-} from "@/lib/actions/notifications";
+import { markNotificationAsRead, getNotifications, getUnreadCount } from "@/lib/actions/notifications";
+import { useRealtime } from "@/lib/hooks/useRealtime";
 
 interface Notification {
   id: string;
@@ -29,6 +26,7 @@ const typeIcon: Record<string, typeof Bell> = {
   reminder_24h: Clock,
   reminder_2h: Clock,
   departure: Navigation,
+  ride_message: MessageSquare,
 };
 
 const typeColor: Record<string, string> = {
@@ -41,9 +39,8 @@ const typeColor: Record<string, string> = {
   reminder_24h: "text-amber-500",
   reminder_2h: "text-orange-500",
   departure: "text-clemson-orange",
+  ride_message: "text-blue-500",
 };
-
-const POLL_INTERVAL = 30_000;
 
 interface NotificationBellProps {
   isTransparent?: boolean;
@@ -53,30 +50,42 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
-  const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Fetch unread count on mount + poll
-  const fetchCount = useCallback(async () => {
-    const count = await getUnreadCount();
-    setUnreadCount(count);
+  // Fetch notifications from server
+  const fetchData = useCallback(async () => {
+    try {
+      const [notifs, count] = await Promise.all([
+        getNotifications(),
+        getUnreadCount(),
+      ]);
+      setItems(notifs as Notification[]);
+      setUnreadCount(count);
+    } catch {
+      // ignore errors (not logged in, etc.)
+    }
   }, []);
 
+  // Initial load
   useEffect(() => {
-    fetchCount();
-    const interval = setInterval(fetchCount, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fetchCount]);
+    fetchData();
+  }, [fetchData]);
 
-  // Load full notifications when dropdown opens
-  async function handleToggle() {
-    const next = !open;
-    setOpen(next);
-    if (next && !loaded) {
-      const data = await getNotifications();
-      setItems(data as Notification[]);
-      setLoaded(true);
+  // Connect to IoT Core — re-fetch when a notification signal arrives
+  useRealtime(fetchData);
+
+  // Polling fallback for when MQTT isn't available (dev, or IoT not deployed)
+  useEffect(() => {
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  function handleToggle() {
+    if (!open) {
+      // Re-fetch when opening dropdown
+      fetchData();
     }
+    setOpen((prev) => !prev);
   }
 
   // Close on outside click

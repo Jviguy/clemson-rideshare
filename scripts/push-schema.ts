@@ -34,6 +34,15 @@ const statements = [
 
   // ── Ride Requests: add note ──
   `ALTER TABLE ride_requests ADD COLUMN IF NOT EXISTS note TEXT`,
+
+  // ── Ride Messages ──
+  `CREATE TABLE IF NOT EXISTS ride_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ride_id UUID NOT NULL REFERENCES rides(id),
+    user_id UUID NOT NULL REFERENCES users(id),
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL
+  )`,
 ];
 
 async function main() {

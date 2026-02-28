@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   MessageSquare,
   UserMinus,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
@@ -38,8 +39,11 @@ import {
   kickRider,
   completeRide,
   cancelRide,
+  sendRideMessage,
+  getRideMessages,
 } from "@/lib/actions/rides";
 import { calculateDetourTime } from "@/lib/actions/maps";
+import { useRealtime } from "@/lib/hooks/useRealtime";
 
 interface RideRequest {
   id: string;
@@ -80,6 +84,23 @@ interface RideDetailData {
   requests: RideRequest[];
 }
 
+interface RideMessage {
+  id: string;
+  message: string;
+  createdAt: Date | string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+interface CurrentUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface RideDetailClientProps {
   ride: RideDetailData;
   isDriver: boolean;
@@ -87,6 +108,9 @@ interface RideDetailClientProps {
   routeGeometry?: [number, number][];
   routeDistance?: number;
   routeDuration?: number;
+  canMessage?: boolean;
+  initialMessages?: RideMessage[];
+  currentUser?: CurrentUser;
 }
 
 function formatPrice(cents: number): string {
@@ -167,6 +191,9 @@ export function RideDetailClient({
   routeGeometry,
   routeDistance,
   routeDuration,
+  canMessage = false,
+  initialMessages = [],
+  currentUser,
 }: RideDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -179,6 +206,33 @@ export function RideDetailClient({
     lat: number;
     lng: number;
   } | null>(null);
+
+  // Messages state (MQTT-driven)
+  const [messages, setMessages] = useState<RideMessage[]>(initialMessages);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Re-fetch messages from server
+  const refreshMessages = useCallback(async () => {
+    try {
+      const msgs = await getRideMessages(ride.id);
+      setMessages(msgs as RideMessage[]);
+    } catch {
+      // ignore
+    }
+  }, [ride.id]);
+
+  // Connect to IoT Core — listen for message signals on this ride's topic
+  const messageTopics = canMessage ? [ride.id] : undefined;
+  useRealtime(undefined, messageTopics, refreshMessages);
+
+  // Polling fallback for when MQTT isn't available (dev, or IoT not deployed)
+  useEffect(() => {
+    if (!canMessage) return;
+    const interval = setInterval(refreshMessages, 2000);
+    return () => clearInterval(interval);
+  }, [canMessage, refreshMessages]);
 
   const departure =
     typeof ride.departureTime === "string"
@@ -310,6 +364,43 @@ export function RideDetailClient({
     });
   }
 
+  async function handleSendMessage() {
+    if (!newMessage.trim() || sendingMessage) return;
+    const msg = newMessage.trim();
+    setNewMessage("");
+    setSendingMessage(true);
+
+    // Optimistic update — show message locally immediately
+    if (currentUser) {
+      const optimistic: RideMessage = {
+        id: `optimistic-${Date.now()}`,
+        message: msg,
+        createdAt: new Date().toISOString(),
+        user: currentUser,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+    }
+
+    const result = await sendRideMessage(ride.id, msg);
+    if (result.success) {
+      // Confirm with real data from DB
+      refreshMessages();
+    } else {
+      toast("error", result.error ?? "Failed to send message.");
+      setNewMessage(msg); // restore on failure
+      // Remove optimistic message
+      setMessages((prev) => prev.filter((m) => !m.id.startsWith("optimistic-")));
+    }
+    setSendingMessage(false);
+  }
+
+  // Scroll to bottom when messages update (SSE push)
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
+  }, [messages.length]);
+
   return (
     <div className="space-y-6">
       {/* Map */}
@@ -326,8 +417,8 @@ export function RideDetailClient({
           {routeDistance != null && (
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-clemson-orange" />
-              <span className="font-medium">{routeDistance.toFixed(1)} km</span>
-              <span className="text-gray-400">({(routeDistance * 0.621371).toFixed(1)} mi)</span>
+              <span className="font-medium">{(routeDistance * 0.621371).toFixed(1)} mi</span>
+              <span className="text-gray-400">({routeDistance.toFixed(1)} km)</span>
             </div>
           )}
           {routeDuration != null && (
@@ -370,7 +461,7 @@ export function RideDetailClient({
                 <div className="flex-1 space-y-4">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      Pickup
+                      From
                     </p>
                     <p className="text-sm font-medium text-gray-900">
                       {ride.originName}
@@ -378,7 +469,7 @@ export function RideDetailClient({
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      Destination
+                      To
                     </p>
                     <p className="text-sm font-medium text-gray-900">
                       {ride.destName}
@@ -677,6 +768,82 @@ export function RideDetailClient({
               </CardContent>
             </Card>
           )}
+
+          {/* ── Ride Messages ── */}
+          {canMessage && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-clemson-orange" />
+                  Messages
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Message thread */}
+                <div className="max-h-80 overflow-y-auto space-y-3 mb-4">
+                  {messages.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-4">
+                      No messages yet. Start a conversation to coordinate details.
+                    </p>
+                  ) : (
+                    messages.map((msg) => {
+                      const msgDate =
+                        typeof msg.createdAt === "string"
+                          ? new Date(msg.createdAt)
+                          : msg.createdAt;
+                      return (
+                        <div key={msg.id} className="flex items-start gap-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-clemson-purple/10">
+                            <User className="h-3.5 w-3.5 text-clemson-purple" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {msg.user.name}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {formatDistanceToNow(msgDate, { addSuffix: true })}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-sm text-gray-700 whitespace-pre-line break-words">
+                              {msg.message}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Message input */}
+                <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="Type a message..."
+                    maxLength={1000}
+                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-clemson-orange focus:outline-none focus:ring-1 focus:ring-clemson-orange"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!newMessage.trim() || sendingMessage}
+                    loading={sendingMessage}
+                    onClick={handleSendMessage}
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar - right column */}
@@ -777,8 +944,8 @@ export function RideDetailClient({
           {/* Pickup location (required) */}
           <div>
             <LocationSearch
-              label="Pickup Location"
-              placeholder="Where should the driver pick you up?"
+              label="Where should the driver pick you up?"
+              placeholder="Enter an address or landmark..."
               onSelect={(place) => setJoinPickup(place)}
             />
             {joinPickup && (

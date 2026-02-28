@@ -33,6 +33,11 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
+    "Realtime": {
+      "authorizer": string
+      "endpoint": string
+      "type": "sst.aws.Realtime"
+    }
     "RideScheduler": {
       "name": string
       "type": "sst.aws.Function"

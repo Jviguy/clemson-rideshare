@@ -128,17 +128,9 @@ export const handler = async (
     }
 
     case "ride.request.submitted": {
-      // Notify the driver about a new request
+      // DB notification is created directly in the server action for instant delivery.
+      // Lambda only handles async email notification.
       if (detail.driverId && detail.rideId) {
-        await executeSQL(
-          "INSERT INTO notifications (id, user_id, ride_id, type, message, read) VALUES (gen_random_uuid(), :userId, :rideId, 'ride_request', 'A new rider has requested to join your ride!', false)",
-          [
-            { name: "userId", value: { stringValue: detail.driverId } },
-            { name: "rideId", value: { stringValue: detail.rideId } },
-          ]
-        );
-
-        // Email the driver
         const driverEmail = await getUserEmail(detail.driverId);
         const riderName = detail.riderId ? await getUserName(detail.riderId) : "A rider";
         if (driverEmail) {

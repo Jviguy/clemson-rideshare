@@ -5,6 +5,7 @@ import {
   users,
   rides,
   rideRequests,
+  rideMessages,
   notifications,
 } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/cognito";
@@ -13,11 +14,12 @@ import {
   capturePayment,
   cancelPaymentHold,
 } from "@/lib/stripe";
-import { eq, and, desc, sql, gte, like, asc, or } from "drizzle-orm";
+import { eq, and, desc, sql, gte, like, ilike, asc, or } from "drizzle-orm";
 import {
   EventBridgeClient,
   PutEventsCommand,
 } from "@aws-sdk/client-eventbridge";
+import { pushNotification, pushMessage } from "@/lib/realtime";
 
 // ── Types ──
 
@@ -268,11 +270,17 @@ export async function getRides(
     ];
 
     if (filters?.destination) {
-      conditions.push(like(rides.destName, `%${filters.destination}%`));
+      // Search both origin and destination names (case-insensitive)
+      conditions.push(
+        or(
+          ilike(rides.destName, `%${filters.destination}%`),
+          ilike(rides.originName, `%${filters.destination}%`)
+        )!
+      );
     }
 
     if (filters?.origin) {
-      conditions.push(like(rides.originName, `%${filters.origin}%`));
+      conditions.push(ilike(rides.originName, `%${filters.origin}%`));
     }
 
     if (filters?.date) {
@@ -480,6 +488,16 @@ export async function requestToJoinRide(
       pickupLng: options?.pickupLng ?? null,
     });
 
+    // Notify the driver immediately (in-app)
+    await db.insert(notifications).values({
+      userId: ride.driverId,
+      rideId,
+      type: "ride_request",
+      message: `${user.name} requested to join your ride from ${ride.originName} to ${ride.destName}.`,
+    });
+    pushNotification(ride.driverId, { type: "refresh" });
+
+    // EventBridge handles email notification asynchronously
     publishEvent("ride.request.submitted", {
       rideId,
       riderId: user.id,
@@ -666,6 +684,7 @@ export async function acceptRideRequest(
       type: "request_accepted",
       message: `Your request for ${ride.originName} → ${ride.destName} was accepted! Go to My Rides to confirm & pay.`,
     });
+    pushNotification(request.riderId, { type: "refresh" });
 
     publishEvent("ride.request.accepted", {
       rideId: ride.id,
@@ -748,6 +767,7 @@ export async function rejectRideRequest(
       type: "request_rejected",
       message: `Your request to join the ride from ${ride.originName} to ${ride.destName} has been rejected.`,
     });
+    pushNotification(request.riderId, { type: "refresh" });
 
     return { success: true };
   } catch (err: unknown) {
@@ -844,6 +864,7 @@ export async function kickRider(
       type: "rider_kicked",
       message: `You have been removed from the ride from ${ride.originName} to ${ride.destName}. Any payment hold has been released.`,
     });
+    pushNotification(request.riderId, { type: "refresh" });
 
     return { success: true };
   } catch (err: unknown) {
@@ -1034,6 +1055,7 @@ export async function completeRide(
         type: "ride_completed",
         message: `The ride from ${ride.originName} to ${ride.destName} has been completed. Payment has been processed.`,
       });
+      pushNotification(request.riderId, { type: "refresh" });
     }
 
     publishEvent("ride.completed", { rideId });
@@ -1123,6 +1145,7 @@ export async function cancelRide(
         type: "ride_cancelled",
         message: `The ride from ${ride.originName} to ${ride.destName} has been cancelled by the driver.`,
       });
+      pushNotification(request.riderId, { type: "refresh" });
     }
 
     // Update ride status to cancelled
@@ -1225,6 +1248,167 @@ export async function getMyRidesAsRider() {
     return results;
   } catch (err: unknown) {
     console.error("getMyRidesAsRider error:", err);
+    return [];
+  }
+}
+
+// ── 12. Send Ride Message ──
+
+export async function sendRideMessage(
+  rideId: string,
+  message: string
+): Promise<ActionResult> {
+  try {
+    const user = await getOrCreateUser();
+    if (!user) {
+      return { success: false, error: "You must be signed in." };
+    }
+
+    if (!rideId || !message.trim()) {
+      return { success: false, error: "Ride ID and message are required." };
+    }
+
+    if (message.length > 1000) {
+      return { success: false, error: "Message is too long (max 1000 characters)." };
+    }
+
+    // Fetch the ride to verify access
+    const rideResults = await db
+      .select()
+      .from(rides)
+      .where(eq(rides.id, rideId))
+      .limit(1);
+
+    if (rideResults.length === 0) {
+      return { success: false, error: "Ride not found." };
+    }
+
+    const ride = rideResults[0];
+    const isDriver = ride.driverId === user.id;
+
+    // If not the driver, must be an accepted rider
+    if (!isDriver) {
+      const acceptedRequest = await db
+        .select()
+        .from(rideRequests)
+        .where(
+          and(
+            eq(rideRequests.rideId, rideId),
+            eq(rideRequests.riderId, user.id),
+            eq(rideRequests.status, "accepted")
+          )
+        )
+        .limit(1);
+
+      if (acceptedRequest.length === 0) {
+        return { success: false, error: "Only the driver and accepted riders can send messages." };
+      }
+    }
+
+    await db.insert(rideMessages).values({
+      rideId,
+      userId: user.id,
+      message: message.trim(),
+    });
+
+    // Notify all other participants (driver + accepted riders, excluding sender)
+    const acceptedRiders = await db
+      .select({ riderId: rideRequests.riderId })
+      .from(rideRequests)
+      .where(
+        and(
+          eq(rideRequests.rideId, rideId),
+          eq(rideRequests.status, "accepted")
+        )
+      );
+
+    const participantIds = new Set<string>();
+    participantIds.add(ride.driverId);
+    for (const r of acceptedRiders) {
+      participantIds.add(r.riderId);
+    }
+    participantIds.delete(user.id); // don't notify sender
+
+    const notifValues = [...participantIds].map((uid) => ({
+      userId: uid,
+      rideId,
+      type: "ride_message" as const,
+      message: `${user.name}: ${message.trim().slice(0, 80)}${message.trim().length > 80 ? "..." : ""}`,
+    }));
+
+    if (notifValues.length > 0) {
+      await db.insert(notifications).values(notifValues);
+      for (const uid of participantIds) {
+        pushNotification(uid, { type: "refresh" });
+      }
+    }
+
+    // Push message event for live chat via IoT Core
+    pushMessage(rideId, { type: "refresh" });
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("sendRideMessage error:", err);
+    const message_ =
+      err instanceof Error ? err.message : "Failed to send message.";
+    return { success: false, error: message_ };
+  }
+}
+
+// ── 13. Get Ride Messages ──
+
+export async function getRideMessages(rideId: string) {
+  try {
+    const user = await getOrCreateUser();
+    if (!user) return [];
+
+    // Verify user has access (driver or accepted rider)
+    const rideResults = await db
+      .select()
+      .from(rides)
+      .where(eq(rides.id, rideId))
+      .limit(1);
+
+    if (rideResults.length === 0) return [];
+
+    const ride = rideResults[0];
+    const isDriver = ride.driverId === user.id;
+
+    if (!isDriver) {
+      const acceptedRequest = await db
+        .select()
+        .from(rideRequests)
+        .where(
+          and(
+            eq(rideRequests.rideId, rideId),
+            eq(rideRequests.riderId, user.id),
+            eq(rideRequests.status, "accepted")
+          )
+        )
+        .limit(1);
+
+      if (acceptedRequest.length === 0) return [];
+    }
+
+    const messages = await db
+      .select({
+        id: rideMessages.id,
+        message: rideMessages.message,
+        createdAt: rideMessages.createdAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(rideMessages)
+      .innerJoin(users, eq(rideMessages.userId, users.id))
+      .where(eq(rideMessages.rideId, rideId))
+      .orderBy(asc(rideMessages.createdAt));
+
+    return messages;
+  } catch (err: unknown) {
+    console.error("getRideMessages error:", err);
     return [];
   }
 }

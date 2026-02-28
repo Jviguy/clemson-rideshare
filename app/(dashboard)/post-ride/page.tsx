@@ -4,7 +4,6 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MapPin,
-  Calendar,
   Users,
   DollarSign,
   Navigation,
@@ -19,6 +18,7 @@ import {
   CardContent,
 } from "@/components/ui/Card";
 import { LocationSearch } from "@/components/maps/LocationSearch";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { useToast } from "@/components/ui/Toast";
 import { createRide } from "@/lib/actions/rides";
 
@@ -50,6 +50,9 @@ export default function PostRidePage() {
     lat: number;
     lng: number;
   } | null>(null);
+
+  // Departure time state
+  const [departureTime, setDepartureTime] = useState("");
 
   // Price display (dollars) -> hidden field stores cents
   const [priceDisplay, setPriceDisplay] = useState("");
@@ -111,7 +114,7 @@ export default function PostRidePage() {
             {/* Origin */}
             <div>
               <LocationSearch
-                label="Pickup Location"
+                label="Starting Point"
                 placeholder="Where are you leaving from?"
                 onSelect={(place) => setOrigin(place)}
               />
@@ -154,12 +157,13 @@ export default function PostRidePage() {
             </div>
 
             {/* Departure Date/Time */}
-            <Input
+            <DateTimePicker
               label="Departure Date & Time"
               name="departureTime"
-              type="datetime-local"
+              value={departureTime}
+              onChange={setDepartureTime}
+              placeholder="When are you leaving?"
               required
-              iconLeft={<Calendar className="h-4 w-4" />}
             />
 
             {/* Two-column row */}
