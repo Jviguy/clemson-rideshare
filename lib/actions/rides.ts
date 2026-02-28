@@ -1011,10 +1011,10 @@ export async function completeRide(
       ride.destLng
     );
 
-    if (distanceMiles > 1.5) {
+    if (distanceMiles > 50) {
       return {
         success: false,
-        error: `You're ${distanceMiles.toFixed(1)} miles from the destination. You must be within 1.5 miles to complete the ride.`,
+        error: `You're ${distanceMiles.toFixed(1)} miles from the destination. You must be within 50 miles to complete the ride.`,
       };
     }
 

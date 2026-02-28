@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, CheckCircle2, XCircle, AlertTriangle, Car, UserPlus, UserMinus, Clock, Navigation, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, CheckCircle2, XCircle, AlertTriangle, Car, UserPlus, UserMinus, Clock, Navigation, MessageSquare, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { clsx } from "clsx";
-import { markNotificationAsRead, getNotifications, getUnreadCount } from "@/lib/actions/notifications";
+import { markNotificationAsRead, getNotifications, getUnreadCount, clearAllNotifications } from "@/lib/actions/notifications";
 import { useRealtime } from "@/lib/hooks/useRealtime";
 
 interface Notification {
@@ -42,14 +43,37 @@ const typeColor: Record<string, string> = {
   ride_message: "text-blue-500",
 };
 
+/** Map notification type → route to navigate to */
+function getNotificationHref(item: Notification): string | null {
+  if (!item.rideId) return null;
+
+  switch (item.type) {
+    case "ride_request":
+    case "ride_message":
+    case "request_accepted":
+    case "request_rejected":
+    case "ride_completed":
+    case "ride_cancelled":
+    case "rider_kicked":
+    case "reminder_24h":
+    case "reminder_2h":
+    case "departure":
+      return `/rides/${item.rideId}`;
+    default:
+      return item.rideId ? `/rides/${item.rideId}` : null;
+  }
+}
+
 interface NotificationBellProps {
   isTransparent?: boolean;
 }
 
 export function NotificationBell({ isTransparent }: NotificationBellProps) {
+  const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   // Fetch notifications from server
@@ -82,7 +106,6 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
 
   function handleToggle() {
     if (!open) {
-      // Re-fetch when opening dropdown
       fetchData();
     }
     setOpen((prev) => !prev);
@@ -101,12 +124,30 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
     }
   }, [open]);
 
-  async function handleMarkRead(id: string) {
-    await markNotificationAsRead(id);
-    setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-    setUnreadCount((c) => Math.max(0, c - 1));
+  async function handleNotificationClick(item: Notification) {
+    // Mark as read
+    if (!item.read) {
+      await markNotificationAsRead(item.id);
+      setItems((prev) =>
+        prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
+    }
+
+    // Navigate to relevant page
+    const href = getNotificationHref(item);
+    if (href) {
+      setOpen(false);
+      router.push(href);
+    }
+  }
+
+  async function handleClearAll() {
+    setClearing(true);
+    await clearAllNotifications();
+    setItems([]);
+    setUnreadCount(0);
+    setClearing(false);
   }
 
   return (
@@ -131,11 +172,22 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-background shadow-xl z-50 animate-in fade-in zoom-in duration-200">
-          <div className="border-b border-gray-100 dark:border-gray-800 px-4 py-3">
+        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-gray-200 dark:border-clemson-orange/20 bg-background shadow-xl z-50 animate-in fade-in zoom-in duration-200">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-clemson-orange/20 px-4 py-3">
             <h3 className="text-sm font-semibold text-foreground">
               Notifications
             </h3>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                disabled={clearing}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="h-3 w-3" />
+                Clear all
+              </button>
+            )}
           </div>
 
           {items.length === 0 ? (
@@ -143,7 +195,7 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
               No notifications yet
             </div>
           ) : (
-            <div className="divide-y divide-gray-50 dark:divide-gray-800">
+            <div className="divide-y divide-gray-50 dark:divide-clemson-orange/10">
               {items.map((item) => {
                 const Icon = typeIcon[item.type] ?? Bell;
                 const color = typeColor[item.type] ?? "text-gray-400";
@@ -151,12 +203,13 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
                   typeof item.createdAt === "string"
                     ? new Date(item.createdAt)
                     : item.createdAt;
+                const href = getNotificationHref(item);
 
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => !item.read && handleMarkRead(item.id)}
+                    onClick={() => handleNotificationClick(item)}
                     className={clsx(
                       "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cursor-pointer",
                       item.read
@@ -186,6 +239,13 @@ export function NotificationBell({ isTransparent }: NotificationBellProps) {
                     </div>
                     {!item.read && (
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-clemson-orange" />
+                    )}
+                    {href && (
+                      <span className="mt-0.5 text-gray-300 dark:text-gray-600">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
                     )}
                   </button>
                 );

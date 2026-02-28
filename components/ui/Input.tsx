@@ -43,7 +43,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               "focus:outline-none focus:ring-2 focus:ring-offset-0",
               error
                 ? "border-error focus:border-error focus:ring-error/30"
-                : "border-gray-200 dark:border-gray-800 focus:border-clemson-orange focus:ring-clemson-orange/30",
+                : "border-gray-200 dark:border-clemson-orange/20 focus:border-clemson-orange focus:ring-clemson-orange/30",
               "disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500",
               iconLeft && "pl-10",
               iconRight && "pr-10",

@@ -162,8 +162,8 @@ export function NavbarClient({ user }: NavbarClientProps) {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl bg-background shadow-xl border border-gray-100 dark:border-gray-800 py-1 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
-                    <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800 mb-1">
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl bg-background shadow-xl border border-gray-100 dark:border-clemson-orange/20 py-1 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="px-4 py-2 border-b border-gray-100 dark:border-clemson-orange/20 mb-1">
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
                     <form action={signOutAction}>
@@ -253,7 +253,7 @@ export function NavbarClient({ user }: NavbarClientProps) {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background border-t border-gray-100 dark:border-gray-800 shadow-lg md:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-background border-t border-gray-100 dark:border-clemson-orange/20 shadow-lg md:hidden z-50">
           <div className="flex flex-col px-4 py-3 gap-1">
             {user && (
               <>
@@ -288,7 +288,7 @@ export function NavbarClient({ user }: NavbarClientProps) {
               </>
             )}
 
-            <div className="border-t border-gray-100 dark:border-gray-800 mt-2 pt-2">
+            <div className="border-t border-gray-100 dark:border-clemson-orange/20 mt-2 pt-2">
               {user ? (
                 <div className="flex items-center justify-between px-3 py-2">
                   <div className="flex items-center gap-2">

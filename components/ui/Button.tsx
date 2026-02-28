@@ -21,9 +21,9 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary:
     "bg-clemson-purple text-white hover:bg-clemson-purple-dark active:bg-clemson-purple-dark/90 focus-visible:ring-clemson-purple/50",
   outline:
-    "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus-visible:ring-clemson-orange/50",
+    "border border-gray-300 dark:border-clemson-orange/20 bg-white dark:bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-clemson-orange/10 active:bg-gray-100 focus-visible:ring-clemson-orange/50",
   ghost:
-    "bg-transparent text-gray-700 hover:bg-gray-100 active:bg-gray-200 focus-visible:ring-gray-400/50",
+    "bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-clemson-orange/10 active:bg-gray-200 focus-visible:ring-gray-400/50",
   danger:
     "bg-error text-white hover:bg-red-600 active:bg-red-700 focus-visible:ring-error/50",
 };

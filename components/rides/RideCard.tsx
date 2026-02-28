@@ -78,13 +78,13 @@ export function RideCard({
       : ride.departureTime;
 
   const content = (
-    <Card className="group overflow-hidden transition-shadow hover:shadow-md bg-transparent border-gray-200 dark:border-gray-800">
+    <Card className="group overflow-hidden transition-shadow hover:shadow-md bg-transparent border-gray-200 dark:border-clemson-orange/20">
       {showMap && (
         <div className="pointer-events-none">
           <RideMap
             origin={{ lat: ride.originLat, lng: ride.originLng }}
             destination={{ lat: ride.destLat, lng: ride.destLng }}
-            className="h-36 rounded-none border-b border-gray-200 dark:border-gray-800"
+            className="h-36 rounded-none border-b border-gray-200 dark:border-clemson-orange/20"
           />
         </div>
       )}

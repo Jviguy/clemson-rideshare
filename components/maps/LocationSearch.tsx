@@ -100,7 +100,7 @@ export function LocationSearch({
       )}
 
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-100 dark:border-gray-800 bg-background shadow-lg">
+        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-100 dark:border-clemson-orange/20 bg-background shadow-lg">
           {suggestions.map((place, index) => (
             <li key={`${place.label}-${index}`}>
               <button

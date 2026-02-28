@@ -63,3 +63,12 @@ export async function markNotificationAsRead(notificationId: string) {
       )
     );
 }
+
+export async function clearAllNotifications() {
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+
+  await db
+    .delete(notifications)
+    .where(eq(notifications.userId, userId));
+}

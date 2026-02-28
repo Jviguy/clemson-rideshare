@@ -164,7 +164,7 @@ export function MyRidesClient({
                   href={`/rides/${ride.id}`}
                 >
                   {/* Request counts + actions */}
-                  <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3 mt-1">
+                  <div className="flex items-center justify-between border-t border-gray-200 dark:border-clemson-orange/20 pt-3 mt-1">
                     <div className="flex items-center gap-3">
                       {Number(ride.pendingRequests) > 0 && (
                         <Badge variant="warning">
@@ -219,7 +219,7 @@ export function MyRidesClient({
                     showMap={true}
                     href={`/rides/${item.ride.id}`}
                   >
-                    <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-800 pt-3 mt-1">
+                    <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-clemson-orange/20 pt-3 mt-1">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-400">Status:</span>
@@ -317,7 +317,7 @@ function EmptyState({
   actionHref: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-transparent py-16 px-6 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-clemson-orange/20 bg-transparent py-16 px-6 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-transparent mb-4">
         <Icon className="h-8 w-8 text-gray-400" />
       </div>

@@ -225,14 +225,23 @@ export function RideDetailClient({
 
   // Connect to IoT Core — listen for message signals on this ride's topic
   const messageTopics = canMessage ? [ride.id] : undefined;
-  useRealtime(undefined, messageTopics, refreshMessages);
 
-  // Polling fallback for when MQTT isn't available (dev, or IoT not deployed)
+  // When driver gets a notification signal, refresh the page to pick up new requests
+  const handleNotification = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  useRealtime(isDriver ? handleNotification : undefined, messageTopics, refreshMessages);
+
+  // Polling fallback: refresh messages + ride data when MQTT isn't available
   useEffect(() => {
-    if (!canMessage) return;
-    const interval = setInterval(refreshMessages, 2000);
+    if (!canMessage && !isDriver) return;
+    const interval = setInterval(() => {
+      if (canMessage) refreshMessages();
+      if (isDriver) router.refresh(); // picks up new requests
+    }, 3000);
     return () => clearInterval(interval);
-  }, [canMessage, refreshMessages]);
+  }, [canMessage, isDriver, refreshMessages, router]);
 
   const departure =
     typeof ride.departureTime === "string"
@@ -478,7 +487,7 @@ export function RideDetailClient({
                 </div>
               </div>
 
-              <hr className="border-gray-100" />
+              <hr className="border-gray-100 dark:border-clemson-orange/10" />
 
               {/* Meta grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -530,7 +539,7 @@ export function RideDetailClient({
               {/* Driver description / rules */}
               {ride.description && (
                 <>
-                  <hr className="border-gray-100" />
+                  <hr className="border-gray-100 dark:border-clemson-orange/10" />
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-1.5">
                       Driver Notes / Rules
@@ -568,7 +577,7 @@ export function RideDetailClient({
                       {pendingRequests.map((req) => (
                         <div
                           key={req.id}
-                          className="rounded-lg border border-gray-200 p-3"
+                          className="rounded-lg border border-gray-200 dark:border-clemson-orange/20 p-3"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -656,7 +665,7 @@ export function RideDetailClient({
                       {acceptedRequests.map((req) => (
                         <div
                           key={req.id}
-                          className="rounded-lg border border-gray-200 p-3"
+                          className="rounded-lg border border-gray-200 dark:border-clemson-orange/20 p-3"
                         >
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50">
@@ -754,7 +763,7 @@ export function RideDetailClient({
                   {acceptedRequests.map((req) => (
                     <div
                       key={req.id}
-                      className="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
+                      className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-clemson-orange/20 p-3"
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50">
                         <User className="h-4 w-4 text-emerald-600" />
@@ -817,7 +826,7 @@ export function RideDetailClient({
                 </div>
 
                 {/* Message input */}
-                <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
+                <div className="flex items-center gap-2 border-t border-gray-100 dark:border-clemson-orange/10 pt-3">
                   <input
                     type="text"
                     value={newMessage}
@@ -830,7 +839,7 @@ export function RideDetailClient({
                     }}
                     placeholder="Type a message..."
                     maxLength={1000}
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-clemson-orange focus:outline-none focus:ring-1 focus:ring-clemson-orange"
+                    className="flex-1 rounded-lg border border-gray-200 dark:border-clemson-orange/20 px-3 py-2 text-sm text-foreground bg-background placeholder:text-gray-400 focus:border-clemson-orange focus:outline-none focus:ring-1 focus:ring-clemson-orange"
                   />
                   <Button
                     size="sm"

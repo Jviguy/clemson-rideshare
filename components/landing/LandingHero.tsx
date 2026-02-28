@@ -285,7 +285,7 @@ export function LandingHero() {
       </section>
 
       {/* ════════ STATS BAR ════════ */}
-      <section className="relative py-16 bg-background border-b border-gray-100 dark:border-gray-800">
+      <section className="relative py-16 bg-background border-b border-gray-100 dark:border-clemson-orange/20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
@@ -333,7 +333,7 @@ export function LandingHero() {
           >
             {steps.map((step, i) => (
               <motion.div key={step.title} variants={fadeUp}>
-                <div className="group relative rounded-2xl border border-gray-100 dark:border-gray-800 bg-background p-8 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 h-full">
+                <div className="group relative rounded-2xl border border-gray-100 dark:border-clemson-orange/20 bg-background p-8 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 h-full">
                   <div className="absolute -top-4 -left-2 flex h-9 w-9 items-center justify-center rounded-full bg-clemson-purple text-sm font-bold text-white shadow-lg">
                     {i + 1}
                   </div>
@@ -388,7 +388,7 @@ export function LandingHero() {
           >
             {features.map((f) => (
               <motion.div key={f.title} variants={scaleIn}>
-                <div className="group h-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-background p-7 transition-all duration-300 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-0.5">
+                <div className="group h-full rounded-2xl border border-gray-100 dark:border-clemson-orange/20 bg-background p-7 transition-all duration-300 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-0.5">
                   <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${f.bg}`}>
                     <f.icon className={`h-5 w-5 ${f.accent}`} />
                   </div>
@@ -428,7 +428,7 @@ export function LandingHero() {
           >
             {testimonials.map((t) => (
               <motion.div key={t.name} variants={fadeUp}>
-                <div className="h-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-background p-7">
+                <div className="h-full rounded-2xl border border-gray-100 dark:border-clemson-orange/20 bg-background p-7">
                   {/* Stars */}
                   <div className="flex gap-0.5 mb-4">
                     {[...Array(5)].map((_, i) => (
@@ -438,7 +438,7 @@ export function LandingHero() {
                   <p className="text-foreground leading-relaxed font-medium">
                     &ldquo;{t.quote}&rdquo;
                   </p>
-                  <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+                  <div className="mt-5 pt-5 border-t border-gray-100 dark:border-clemson-orange/20">
                     <p className="font-semibold text-sm text-foreground">{t.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{t.detail}</p>
                   </div>

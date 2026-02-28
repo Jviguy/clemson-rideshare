@@ -50,7 +50,7 @@ export default async function RidesPage({ searchParams }: RidesPageProps) {
         </div>
       ) : (
         /* Empty state */
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-transparent py-16 px-6 text-center">
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-clemson-orange/20 bg-transparent py-16 px-6 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-transparent mb-4">
             <Car className="h-8 w-8 text-gray-400" />
           </div>

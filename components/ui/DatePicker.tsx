@@ -47,7 +47,7 @@ export function DatePicker({
         onClick={() => setOpen((o) => !o)}
         className={clsx(
           "flex items-center gap-2 w-full rounded-lg border px-3 py-2 text-sm text-left transition-colors cursor-pointer",
-          "border-gray-200 dark:border-gray-800 bg-background",
+          "border-gray-200 dark:border-clemson-orange/20 bg-background",
           "hover:border-gray-300 dark:hover:border-gray-700",
           open
             ? "ring-2 ring-clemson-orange/30 border-clemson-orange"
@@ -78,7 +78,7 @@ export function DatePicker({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-background shadow-xl p-3 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute top-full left-0 z-50 mt-1 rounded-xl border border-gray-200 dark:border-clemson-orange/20 bg-background shadow-xl p-3 animate-in fade-in zoom-in-95 duration-150">
           <DayPicker
             mode="single"
             selected={selected}

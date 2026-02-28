@@ -110,7 +110,7 @@ export function DateTimePicker({
         onClick={() => setOpen((o) => !o)}
         className={clsx(
           "flex items-center gap-2 w-full rounded-lg border px-3 py-2 text-sm text-left transition-colors cursor-pointer",
-          "border-gray-200 dark:border-gray-800 bg-background",
+          "border-gray-200 dark:border-clemson-orange/20 bg-background",
           "hover:border-gray-300 dark:hover:border-gray-700",
           open
             ? "ring-2 ring-clemson-orange/30 border-clemson-orange"
@@ -143,7 +143,7 @@ export function DateTimePicker({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-background shadow-xl p-3 animate-in fade-in zoom-in-95 duration-150 w-[300px]">
+        <div className="absolute top-full left-0 z-50 mt-1 rounded-xl border border-gray-200 dark:border-clemson-orange/20 bg-background shadow-xl p-3 animate-in fade-in zoom-in-95 duration-150 w-[300px]">
           {/* Calendar */}
           <DayPicker
             mode="single"
@@ -172,7 +172,7 @@ export function DateTimePicker({
           />
 
           {/* Time picker */}
-          <div className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+          <div className="mt-3 border-t border-gray-100 dark:border-clemson-orange/20 pt-3">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
               <Clock className="h-3.5 w-3.5" />
               <span className="font-medium">Time</span>
@@ -182,7 +182,7 @@ export function DateTimePicker({
               <select
                 value={hour}
                 onChange={(e) => handleTimeChange(e.target.value, minute, ampm)}
-                className="flex-1 rounded-lg border border-gray-200 dark:border-gray-800 bg-background px-2 py-1.5 text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-clemson-orange/30 focus:border-clemson-orange"
+                className="flex-1 rounded-lg border border-gray-200 dark:border-clemson-orange/20 bg-background px-2 py-1.5 text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-clemson-orange/30 focus:border-clemson-orange"
               >
                 {hours12.map((h) => (
                   <option key={h} value={h}>{h}</option>
@@ -195,7 +195,7 @@ export function DateTimePicker({
               <select
                 value={minute}
                 onChange={(e) => handleTimeChange(hour, e.target.value, ampm)}
-                className="flex-1 rounded-lg border border-gray-200 dark:border-gray-800 bg-background px-2 py-1.5 text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-clemson-orange/30 focus:border-clemson-orange"
+                className="flex-1 rounded-lg border border-gray-200 dark:border-clemson-orange/20 bg-background px-2 py-1.5 text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-clemson-orange/30 focus:border-clemson-orange"
               >
                 {minutes15.map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -206,7 +206,7 @@ export function DateTimePicker({
               <select
                 value={ampm}
                 onChange={(e) => handleTimeChange(hour, minute, e.target.value)}
-                className="w-16 rounded-lg border border-gray-200 dark:border-gray-800 bg-background px-2 py-1.5 text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-clemson-orange/30 focus:border-clemson-orange"
+                className="w-16 rounded-lg border border-gray-200 dark:border-clemson-orange/20 bg-background px-2 py-1.5 text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-clemson-orange/30 focus:border-clemson-orange"
               >
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>

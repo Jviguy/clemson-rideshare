@@ -59,15 +59,15 @@ function Modal({ open, onClose, title, children, className }: ModalProps) {
       {/* Panel */}
       <div
         className={clsx(
-          "relative z-10 w-full max-w-lg rounded-xl bg-white shadow-xl",
+          "relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-background dark:border dark:border-clemson-orange/20 shadow-xl",
           "animate-in fade-in zoom-in-95 duration-200",
           className
         )}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-clemson-orange/20 px-6 py-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-foreground">{title}</h2>
             <button
               type="button"
               onClick={onClose}
