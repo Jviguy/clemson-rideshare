@@ -20,11 +20,12 @@ export async function createPaymentHold(
   amountCents: number,
   customerEmail: string,
   rideId: string,
-  riderId: string
+  riderId: string,
+  driverConnectAccountId?: string | null
 ) {
   const stripe = getStripe();
 
-  const paymentIntent = await stripe.paymentIntents.create({
+  const params: Stripe.PaymentIntentCreateParams = {
     amount: amountCents,
     currency: "usd",
     capture_method: "manual", // Pre-auth only, capture later
@@ -35,7 +36,15 @@ export async function createPaymentHold(
       riderId,
       type: "ride_payment",
     },
-  });
+  };
+
+  // If driver has Stripe Connect, route funds to them with 10% platform fee
+  if (driverConnectAccountId) {
+    params.application_fee_amount = Math.round(amountCents * 0.1);
+    params.transfer_data = { destination: driverConnectAccountId };
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create(params);
 
   return paymentIntent;
 }

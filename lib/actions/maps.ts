@@ -64,3 +64,30 @@ export async function calculateRouteAction(
     return null;
   }
 }
+
+/**
+ * Calculate the extra time added by detouring through a pickup point.
+ * Returns the additional minutes compared to driving directly.
+ */
+export async function calculateDetourTime(
+  originLat: number,
+  originLng: number,
+  destLat: number,
+  destLng: number,
+  pickupLat: number,
+  pickupLng: number
+): Promise<number | null> {
+  try {
+    const [direct, viaPickup1, viaPickup2] = await Promise.all([
+      calculateRoute(originLat, originLng, destLat, destLng),
+      calculateRoute(originLat, originLng, pickupLat, pickupLng),
+      calculateRoute(pickupLat, pickupLng, destLat, destLng),
+    ]);
+
+    const detourDuration = viaPickup1.duration + viaPickup2.duration;
+    return Math.round(detourDuration - direct.duration);
+  } catch (error) {
+    console.error("calculateDetourTime error:", error);
+    return null;
+  }
+}

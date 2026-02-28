@@ -3,7 +3,7 @@ import { RDSDataClient, ExecuteStatementCommand } from "@aws-sdk/client-rds-data
 // Read database config from SST resource binding
 const raw = process.env.SST_RESOURCE_ClemsonDB;
 if (!raw) {
-  console.error("Run this with: npx sst shell npx tsx scripts/push-schema.ts");
+  console.error("Run this with: bunx sst shell npx tsx scripts/push-schema.ts");
   process.exit(1);
 }
 
@@ -21,22 +21,24 @@ async function exec(sql: string) {
 }
 
 const statements = [
-  // Alter existing enum columns to text (safe if already text)
-  `ALTER TABLE rides ALTER COLUMN status TYPE TEXT`,
-  `ALTER TABLE ride_requests ALTER COLUMN status TYPE TEXT`,
+  // ── Users: add Stripe Connect account ID ──
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_connect_account_id VARCHAR(255)`,
 
-  // Drop old enum types
-  `DROP TYPE IF EXISTS ride_status`,
-  `DROP TYPE IF EXISTS request_status`,
+  // ── Rides: add description ──
+  `ALTER TABLE rides ADD COLUMN IF NOT EXISTS description TEXT`,
 
-  // Re-set defaults (ALTER TYPE drops them)
-  `ALTER TABLE rides ALTER COLUMN status SET DEFAULT 'open'`,
-  `ALTER TABLE ride_requests ALTER COLUMN status SET DEFAULT 'pending'`,
+  // ── Ride Requests: add pickup location ──
+  `ALTER TABLE ride_requests ADD COLUMN IF NOT EXISTS pickup_name VARCHAR(500)`,
+  `ALTER TABLE ride_requests ADD COLUMN IF NOT EXISTS pickup_lat DOUBLE PRECISION`,
+  `ALTER TABLE ride_requests ADD COLUMN IF NOT EXISTS pickup_lng DOUBLE PRECISION`,
+
+  // ── Ride Requests: add note ──
+  `ALTER TABLE ride_requests ADD COLUMN IF NOT EXISTS note TEXT`,
 ];
 
 async function main() {
   for (const sql of statements) {
-    const label = sql.slice(0, 60).replace(/\n/g, " ").trim();
+    const label = sql.slice(0, 80).replace(/\n/g, " ").trim();
     try {
       await exec(sql);
       console.log(`✓ ${label}...`);

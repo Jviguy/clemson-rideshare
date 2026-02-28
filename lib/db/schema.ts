@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 20 }),
+  stripeConnectAccountId: varchar("stripe_connect_account_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -36,6 +37,7 @@ export const rides = pgTable("rides", {
   totalSeats: integer("total_seats").notNull(),
   availableSeats: integer("available_seats").notNull(),
   pricePerSeat: integer("price_per_seat").notNull(), // cents
+  description: text("description"),
   status: text("status").default("open").notNull().$type<"open" | "full" | "in_progress" | "completed" | "cancelled">(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -50,8 +52,12 @@ export const rideRequests = pgTable("ride_requests", {
     .references(() => users.id)
     .notNull(),
   status: text("status").default("pending").notNull().$type<"pending" | "accepted" | "rejected" | "cancelled">(),
+  pickupName: varchar("pickup_name", { length: 500 }),
+  pickupLat: doublePrecision("pickup_lat"),
+  pickupLng: doublePrecision("pickup_lng"),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   amountCents: integer("amount_cents").notNull(),
+  note: text("note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

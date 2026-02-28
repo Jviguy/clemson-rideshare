@@ -1,0 +1,213 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="arch" name="TigerRide Architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="title" value="&lt;b&gt;TigerRide&lt;/b&gt; — Fully Serverless Architecture" style="text;html=1;fontSize=20;fontStyle=0;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="450" y="10" width="500" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Users -->
+        <mxCell id="users" value="Students" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3E;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.users" vertex="1" parent="1">
+          <mxGeometry x="670" y="60" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- AWS Cloud Group -->
+        <mxCell id="cloud" value="AWS Cloud (us-east-1)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;fontColor=#232F3E;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="160" width="1240" height="720" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== ROW 1: EDGE / DELIVERY ========== -->
+
+        <!-- CloudFront -->
+        <mxCell id="cf" value="Amazon CloudFront&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;CDN + Next.js SSR via SST&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudfront" vertex="1" parent="1">
+          <mxGeometry x="670" y="220" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== ROW 2: CORE SERVICES ========== -->
+
+        <!-- Cognito -->
+        <mxCell id="cognito" value="Amazon Cognito&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;@clemson.edu Auth&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cognito" vertex="1" parent="1">
+          <mxGeometry x="200" y="400" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Pre-Signup Lambda -->
+        <mxCell id="preSignup" value="AWS Lambda&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Pre-Signup Validation&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda" vertex="1" parent="1">
+          <mxGeometry x="200" y="560" width="48" height="48" as="geometry"/>
+        </mxCell>
+
+        <!-- Aurora (in VPC group) -->
+        <mxCell id="vpc" value="VPC" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=11;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_vpc2;strokeColor=#8C4FFF;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AAB7B8;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="370" y="370" width="170" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="aurora" value="Amazon Aurora&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Serverless v2 PostgreSQL&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#C925D1;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.aurora" vertex="1" parent="1">
+          <mxGeometry x="425" y="400" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- RDS Data API label -->
+        <mxCell id="dataApi" value="RDS Data API&lt;br&gt;&lt;font style=&quot;font-size:8px;color:#999&quot;&gt;(No VPC Lambda needed)&lt;/font&gt;" style="text;html=1;fontSize=9;fillColor=none;align=center;verticalAlign=top;whiteSpace=wrap;fontColor=#C925D1;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="390" y="505" width="130" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Location Service -->
+        <mxCell id="location" value="Amazon Location&lt;br&gt;Service&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Maps, Places, Routes&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.location_service" vertex="1" parent="1">
+          <mxGeometry x="670" y="400" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- EventBridge -->
+        <mxCell id="eb" value="Amazon&lt;br&gt;EventBridge&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Event Bus&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#E7157B;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eventbridge" vertex="1" parent="1">
+          <mxGeometry x="920" y="400" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== ROW 3: EVENT PROCESSING ========== -->
+
+        <!-- Lambda Event Handler -->
+        <mxCell id="eventLambda" value="AWS Lambda&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Ride Event Handler&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda" vertex="1" parent="1">
+          <mxGeometry x="810" y="580" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- EventBridge Scheduler -->
+        <mxCell id="scheduler" value="EventBridge&lt;br&gt;Scheduler&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;24h / 2h / Departure&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#E7157B;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eventbridge" vertex="1" parent="1">
+          <mxGeometry x="1060" y="580" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== ROW 4: OUTPUTS ========== -->
+
+        <!-- SES -->
+        <mxCell id="ses" value="Amazon SES&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Email Notifications&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.simple_email_service" vertex="1" parent="1">
+          <mxGeometry x="810" y="760" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Scheduler -->
+        <mxCell id="schedLambda" value="AWS Lambda&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Ride Scheduler&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda" vertex="1" parent="1">
+          <mxGeometry x="1060" y="760" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- CloudWatch -->
+        <mxCell id="cw" value="Amazon CloudWatch&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Dashboard &amp;amp; Alarms&lt;/font&gt;" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#E7157B;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch" vertex="1" parent="1">
+          <mxGeometry x="420" y="760" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== EXTERNAL: STRIPE ========== -->
+
+        <mxCell id="stripe" value="&lt;b&gt;Stripe&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;Payment Processing&lt;br&gt;(Pre-auth + Capture)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#635BFF;fontColor=#ffffff;strokeColor=none;fontSize=11;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="395" width="130" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== EDGES ========== -->
+
+        <!-- Users → CloudFront -->
+        <mxCell id="e1" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#8C4FFF;strokeWidth=2;fontSize=9;fontColor=#8C4FFF;entryX=0.5;entryY=0;exitX=0.5;exitY=1;" edge="1" source="users" target="cf" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CloudFront → Cognito -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#DD344C;strokeWidth=1.5;exitX=0;exitY=1;entryX=0.5;entryY=0;" edge="1" source="cf" target="cognito" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Cognito → Pre-Signup Lambda -->
+        <mxCell id="e2b" value="Trigger" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#ED7100;strokeWidth=1;dashed=1;fontSize=8;fontColor=#ED7100;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="cognito" target="preSignup" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CloudFront → Aurora -->
+        <mxCell id="e3" value="RDS Data API" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#C925D1;strokeWidth=1.5;fontSize=9;fontColor=#C925D1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" source="cf" target="aurora" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CloudFront → Location Service -->
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#8C4FFF;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="cf" target="location" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CloudFront → EventBridge -->
+        <mxCell id="e5" value="PutEvents" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1.5;fontSize=9;fontColor=#E7157B;exitX=1;exitY=1;entryX=0.5;entryY=0;" edge="1" source="cf" target="eb" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CloudFront → Stripe -->
+        <mxCell id="e6" value="Payments API" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#635BFF;strokeWidth=1.5;fontSize=9;fontColor=#635BFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="cf" target="stripe" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- EventBridge → Event Handler Lambda -->
+        <mxCell id="e7" value="Subscribe" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1.5;fontSize=9;fontColor=#E7157B;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="eb" target="eventLambda" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Event Handler → Aurora (write notifications) -->
+        <mxCell id="e8" value="Write Notifications" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#C925D1;strokeWidth=1;dashed=1;fontSize=8;fontColor=#C925D1;exitX=0;exitY=0.5;entryX=1;entryY=1;" edge="1" source="eventLambda" target="aurora" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="610"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Event Handler → SES -->
+        <mxCell id="e9" value="Send Email" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#DD344C;strokeWidth=1.5;fontSize=9;fontColor=#DD344C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="eventLambda" target="ses" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Event Handler → EventBridge Scheduler -->
+        <mxCell id="e10" value="CreateSchedule" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1.5;fontSize=9;fontColor=#E7157B;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="eventLambda" target="scheduler" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Scheduler → Scheduler Lambda -->
+        <mxCell id="e11" value="Invoke at Time" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1.5;fontSize=9;fontColor=#E7157B;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="scheduler" target="schedLambda" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Scheduler Lambda → SES -->
+        <mxCell id="e12" value="Send Email" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#DD344C;strokeWidth=1;dashed=1;fontSize=8;fontColor=#DD344C;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="schedLambda" target="ses" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Scheduler Lambda → Aurora (notifications) -->
+        <mxCell id="e13" value="Write Notifications" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#C925D1;strokeWidth=1;dashed=1;fontSize=8;fontColor=#C925D1;exitX=0;exitY=1;entryX=1;entryY=1;" edge="1" source="schedLambda" target="aurora" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="860"/>
+              <mxPoint x="485" y="860"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- CloudWatch dashed monitoring lines -->
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1;dashed=1;dashPattern=4 4;exitX=1;exitY=0;entryX=0;entryY=1;" edge="1" source="cw" target="eventLambda" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1;dashed=1;dashPattern=4 4;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" source="cw" target="aurora" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== ANNOTATIONS ========== -->
+
+        <mxCell id="note1" value="&lt;font style=&quot;font-size:9px&quot;&gt;Scales to zero ACU&lt;br&gt;when idle — $0 cost&lt;/font&gt;" style="text;html=1;fontSize=9;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#999;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="370" y="540" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note2" value="&lt;font style=&quot;font-size:9px&quot;&gt;Schedules auto-delete&lt;br&gt;after firing&lt;/font&gt;" style="text;html=1;fontSize=9;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#999;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="610" width="110" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note3" value="&lt;font style=&quot;font-size:9px&quot;&gt;Enforces @clemson.edu&lt;br&gt;email only&lt;/font&gt;" style="text;html=1;fontSize=9;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#999;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="120" y="620" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Service Count Badge -->
+        <mxCell id="badge" value="&lt;b&gt;8 AWS Services&lt;/b&gt; • Fully Serverless • Scales to Zero" style="text;html=1;fontSize=13;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#FF9900;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="450" y="905" width="500" height="30" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -200,6 +200,20 @@ export default function PostRidePage() {
               </div>
             </div>
 
+            {/* Description / Rules */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Description / Rules <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                name="description"
+                placeholder="e.g., No smoking, max 1 bag per person, meeting at the parking garage..."
+                maxLength={1000}
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-clemson-orange focus:outline-none focus:ring-1 focus:ring-clemson-orange resize-none"
+              />
+            </div>
+
             {/* Submit */}
             <Button
               type="submit"

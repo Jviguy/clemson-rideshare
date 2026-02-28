@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, CheckCircle2, XCircle, AlertTriangle, Car } from "lucide-react";
+import { Bell, CheckCircle2, XCircle, AlertTriangle, Car, UserPlus, UserMinus, Clock, Navigation } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
   getNotifications,
@@ -23,6 +23,11 @@ const typeIcon: Record<string, typeof Bell> = {
   request_rejected: XCircle,
   ride_cancelled: AlertTriangle,
   ride_completed: Car,
+  ride_request: UserPlus,
+  rider_kicked: UserMinus,
+  reminder_24h: Clock,
+  reminder_2h: Clock,
+  departure: Navigation,
 };
 
 const typeColor: Record<string, string> = {
@@ -30,6 +35,11 @@ const typeColor: Record<string, string> = {
   request_rejected: "text-red-500",
   ride_cancelled: "text-amber-500",
   ride_completed: "text-blue-500",
+  ride_request: "text-purple-500",
+  rider_kicked: "text-red-500",
+  reminder_24h: "text-amber-500",
+  reminder_2h: "text-orange-500",
+  departure: "text-clemson-orange",
 };
 
 const POLL_INTERVAL = 30_000;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -16,6 +16,8 @@ import {
   Clock,
   Shield,
   AlertTriangle,
+  MessageSquare,
+  UserMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
@@ -25,20 +27,28 @@ import {
   CardContent,
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { RideMap } from "@/components/maps/RideMap";
+import { LocationSearch } from "@/components/maps/LocationSearch";
 import {
   requestToJoinRide,
   acceptRideRequest,
   rejectRideRequest,
+  kickRider,
   completeRide,
   cancelRide,
 } from "@/lib/actions/rides";
+import { calculateDetourTime } from "@/lib/actions/maps";
 
 interface RideRequest {
   id: string;
   status: string;
   amountCents: number;
+  note: string | null;
+  pickupName: string | null;
+  pickupLat: number | null;
+  pickupLng: number | null;
   createdAt: Date | string;
   rider: {
     id: string;
@@ -59,6 +69,7 @@ interface RideDetailData {
   totalSeats: number;
   availableSeats: number;
   pricePerSeat: number;
+  description: string | null;
   status: string;
   createdAt: Date | string;
   driver: {
@@ -80,6 +91,44 @@ interface RideDetailClientProps {
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
+}
+
+/** Shows pickup name + estimated detour time for the driver */
+function PickupInfo({
+  pickupName,
+  pickupLat,
+  pickupLng,
+  originLat,
+  originLng,
+  destLat,
+  destLng,
+}: {
+  pickupName: string;
+  pickupLat: number;
+  pickupLng: number;
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
+}) {
+  const [detourMin, setDetourMin] = useState<number | null>(null);
+
+  useEffect(() => {
+    calculateDetourTime(originLat, originLng, destLat, destLng, pickupLat, pickupLng)
+      .then((min) => setDetourMin(min));
+  }, [originLat, originLng, destLat, destLng, pickupLat, pickupLng]);
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      <MapPin className="h-3.5 w-3.5 shrink-0 text-clemson-orange" />
+      <span className="text-gray-700 font-medium">{pickupName}</span>
+      {detourMin != null && (
+        <span className="text-gray-400">
+          (+{detourMin <= 0 ? "<1" : detourMin} min)
+        </span>
+      )}
+    </div>
+  );
 }
 
 const statusBadgeVariant: Record<
@@ -123,6 +172,13 @@ export function RideDetailClient({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [joinNote, setJoinNote] = useState("");
+  const [joinPickup, setJoinPickup] = useState<{
+    name: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const departure =
     typeof ride.departureTime === "string"
@@ -137,11 +193,23 @@ export function RideDetailClient({
   // -- Action handlers --
 
   function handleRequestToJoin() {
+    if (!joinPickup) {
+      toast("error", "Please select a pickup location.");
+      return;
+    }
     setActionInProgress("join");
     startTransition(async () => {
-      const result = await requestToJoinRide(ride.id);
+      const result = await requestToJoinRide(ride.id, {
+        note: joinNote || undefined,
+        pickupName: joinPickup.name,
+        pickupLat: joinPickup.lat,
+        pickupLng: joinPickup.lng,
+      });
       if (result.success) {
         toast("success", "Request sent! The driver will review it.");
+        setJoinModalOpen(false);
+        setJoinNote("");
+        setJoinPickup(null);
         router.refresh();
       } else {
         toast("error", result.error ?? "Failed to send request.");
@@ -178,18 +246,54 @@ export function RideDetailClient({
     });
   }
 
-  function handleCompleteRide() {
-    setActionInProgress("complete");
+  function handleKickRider(requestId: string) {
+    setActionInProgress(`kick-${requestId}`);
     startTransition(async () => {
-      const result = await completeRide(ride.id);
+      const result = await kickRider(requestId);
       if (result.success) {
-        toast("success", "Ride marked as completed! Payments have been processed.");
+        toast("success", "Rider removed from the ride.");
         router.refresh();
       } else {
-        toast("error", result.error ?? "Failed to complete ride.");
+        toast("error", result.error ?? "Failed to remove rider.");
       }
       setActionInProgress(null);
     });
+  }
+
+  function handleCompleteRide() {
+    setActionInProgress("complete");
+
+    // Get driver's GPS position first
+    if (!navigator.geolocation) {
+      toast("error", "Your browser doesn't support location services.");
+      setActionInProgress(null);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const driverLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        startTransition(async () => {
+          const result = await completeRide(ride.id, driverLocation);
+          if (result.success) {
+            toast("success", "Ride marked as completed! Payments have been processed.");
+            router.refresh();
+          } else {
+            toast("error", result.error ?? "Failed to complete ride.");
+          }
+          setActionInProgress(null);
+        });
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        toast("error", "Location access denied. Please enable location services to complete the ride.");
+        setActionInProgress(null);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
   function handleCancelRide() {
@@ -331,6 +435,21 @@ export function RideDetailClient({
                   </span>
                 </div>
               )}
+
+              {/* Driver description / rules */}
+              {ride.description && (
+                <>
+                  <hr className="border-gray-100" />
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-1.5">
+                      Driver Notes / Rules
+                    </p>
+                    <p className="text-sm text-gray-700 whitespace-pre-line">
+                      {ride.description}
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -358,47 +477,70 @@ export function RideDetailClient({
                       {pendingRequests.map((req) => (
                         <div
                           key={req.id}
-                          className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+                          className="rounded-lg border border-gray-200 p-3"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-clemson-purple/10">
-                              <User className="h-4 w-4 text-clemson-purple" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-clemson-purple/10">
+                                <User className="h-4 w-4 text-clemson-purple" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {req.rider.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {req.rider.email}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {req.rider.name}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {req.rider.email}
-                              </p>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                loading={
+                                  isPending && actionInProgress === req.id
+                                }
+                                disabled={isPending}
+                                onClick={() => handleAcceptRequest(req.id)}
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                loading={
+                                  isPending && actionInProgress === req.id
+                                }
+                                disabled={isPending}
+                                onClick={() => handleRejectRequest(req.id)}
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                Reject
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              loading={
-                                isPending && actionInProgress === req.id
-                              }
-                              disabled={isPending}
-                              onClick={() => handleAcceptRequest(req.id)}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              Accept
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              loading={
-                                isPending && actionInProgress === req.id
-                              }
-                              disabled={isPending}
-                              onClick={() => handleRejectRequest(req.id)}
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                              Reject
-                            </Button>
-                          </div>
+                          {(req.pickupName || req.note) && (
+                            <div className="mt-2 ml-12 space-y-1.5 rounded-md bg-gray-50 px-3 py-2">
+                              {req.pickupName && req.pickupLat != null && req.pickupLng != null && (
+                                <PickupInfo
+                                  pickupName={req.pickupName}
+                                  pickupLat={req.pickupLat}
+                                  pickupLng={req.pickupLng}
+                                  originLat={ride.originLat}
+                                  originLng={ride.originLng}
+                                  destLat={ride.destLat}
+                                  destLng={ride.destLng}
+                                />
+                              )}
+                              {req.note && (
+                                <div className="flex items-start gap-1.5">
+                                  <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                                  <p className="text-xs text-gray-600">{req.note}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -423,22 +565,55 @@ export function RideDetailClient({
                       {acceptedRequests.map((req) => (
                         <div
                           key={req.id}
-                          className="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
+                          className="rounded-lg border border-gray-200 p-3"
                         >
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50">
-                            <User className="h-4 w-4 text-emerald-600" />
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50">
+                              <User className="h-4 w-4 text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {req.rider.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {req.rider.email}
+                              </p>
+                            </div>
+                            <div className="ml-auto flex items-center gap-2">
+                              <Badge variant="success">Confirmed</Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                loading={isPending && actionInProgress === `kick-${req.id}`}
+                                disabled={isPending}
+                                onClick={() => handleKickRider(req.id)}
+                                className="text-red-500 hover:text-red-600 hover:border-red-300"
+                              >
+                                <UserMinus className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {req.rider.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {req.rider.email}
-                            </p>
-                          </div>
-                          <Badge variant="success" className="ml-auto">
-                            Confirmed
-                          </Badge>
+                          {(req.pickupName || req.note) && (
+                            <div className="mt-2 ml-12 space-y-1.5 rounded-md bg-gray-50 px-3 py-2">
+                              {req.pickupName && req.pickupLat != null && req.pickupLng != null && (
+                                <PickupInfo
+                                  pickupName={req.pickupName}
+                                  pickupLat={req.pickupLat}
+                                  pickupLng={req.pickupLng}
+                                  originLat={ride.originLat}
+                                  originLng={ride.originLng}
+                                  destLat={ride.destLat}
+                                  destLng={ride.destLng}
+                                />
+                              )}
+                              {req.note && (
+                                <div className="flex items-start gap-1.5">
+                                  <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                                  <p className="text-xs text-gray-600">{req.note}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -558,9 +733,8 @@ export function RideDetailClient({
                   <Button
                     size="lg"
                     className="w-full"
-                    loading={isPending && actionInProgress === "join"}
                     disabled={isPending}
-                    onClick={handleRequestToJoin}
+                    onClick={() => setJoinModalOpen(true)}
                   >
                     <ArrowRight className="h-4 w-4" />
                     Request to Join
@@ -593,6 +767,54 @@ export function RideDetailClient({
         </div>
       </div>
 
+      {/* Join ride modal */}
+      <Modal
+        open={joinModalOpen}
+        onClose={() => { setJoinModalOpen(false); setJoinNote(""); setJoinPickup(null); }}
+        title="Request to Join"
+      >
+        <div className="space-y-4">
+          {/* Pickup location (required) */}
+          <div>
+            <LocationSearch
+              label="Pickup Location"
+              placeholder="Where should the driver pick you up?"
+              onSelect={(place) => setJoinPickup(place)}
+            />
+            {joinPickup && (
+              <p className="mt-1 text-xs text-emerald-600 flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {joinPickup.name}
+              </p>
+            )}
+          </div>
+
+          {/* Optional note */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Note <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={joinNote}
+              onChange={(e) => setJoinNote(e.target.value)}
+              placeholder="e.g., I'll be wearing a red jacket, I have a large suitcase..."
+              maxLength={500}
+              rows={2}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-clemson-orange focus:outline-none focus:ring-1 focus:ring-clemson-orange resize-none"
+            />
+            <p className="mt-0.5 text-xs text-gray-400 text-right">{joinNote.length}/500</p>
+          </div>
+
+          <Button
+            className="w-full"
+            loading={isPending && actionInProgress === "join"}
+            disabled={isPending || !joinPickup}
+            onClick={handleRequestToJoin}
+          >
+            Send Request
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -133,6 +133,17 @@ export function NavbarClient({ user }: NavbarClientProps) {
               >
                 My Rides
               </Link>
+              <Link
+                href="/account"
+                className={clsx(
+                  "text-sm font-medium transition-colors",
+                  isTransparent
+                    ? "text-white/90 hover:text-white"
+                    : "text-foreground hover:text-clemson-orange"
+                )}
+              >
+                Account
+              </Link>
             </>
           )}
         </nav>
@@ -287,6 +298,13 @@ export function NavbarClient({ user }: NavbarClientProps) {
                   className="px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   My Rides
+                </Link>
+                <Link
+                  href="/account"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Account
                 </Link>
               </>
             )}

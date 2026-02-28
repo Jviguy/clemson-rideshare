@@ -46,6 +46,7 @@ interface RideWithDriver {
   totalSeats: number;
   availableSeats: number;
   pricePerSeat: number;
+  description: string | null;
   status: string;
   createdAt: Date;
   driver: {
@@ -60,6 +61,10 @@ interface RideDetail extends RideWithDriver {
     id: string;
     status: string;
     amountCents: number;
+    note: string | null;
+    pickupName: string | null;
+    pickupLat: number | null;
+    pickupLng: number | null;
     createdAt: Date;
     rider: {
       id: string;
@@ -95,6 +100,23 @@ async function publishEvent(type: string, detail: Record<string, string>) {
   } catch (err) {
     console.error("publishEvent error:", err);
   }
+}
+
+// ── Haversine distance (miles) ──
+
+function haversineDistance(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number
+): number {
+  const R = 3958.8; // Earth radius in miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 // ── Internal helper ──
@@ -150,6 +172,7 @@ export async function createRide(
     const departureTime = formData.get("departureTime") as string;
     const totalSeats = formData.get("totalSeats") as string;
     const pricePerSeat = formData.get("pricePerSeat") as string;
+    const description = ((formData.get("description") as string) || "").trim().slice(0, 1000) || null;
 
     // Validate required fields
     if (
@@ -213,6 +236,7 @@ export async function createRide(
         totalSeats: parsedTotalSeats,
         availableSeats: parsedTotalSeats,
         pricePerSeat: parsedPricePerSeat,
+        description,
         status: "open",
       })
       .returning();
@@ -278,6 +302,7 @@ export async function getRides(
         totalSeats: rides.totalSeats,
         availableSeats: rides.availableSeats,
         pricePerSeat: rides.pricePerSeat,
+        description: rides.description,
         status: rides.status,
         createdAt: rides.createdAt,
         driver: {
@@ -320,6 +345,7 @@ export async function getRideById(
         totalSeats: rides.totalSeats,
         availableSeats: rides.availableSeats,
         pricePerSeat: rides.pricePerSeat,
+        description: rides.description,
         status: rides.status,
         createdAt: rides.createdAt,
         driver: {
@@ -344,6 +370,10 @@ export async function getRideById(
         id: rideRequests.id,
         status: rideRequests.status,
         amountCents: rideRequests.amountCents,
+        note: rideRequests.note,
+        pickupName: rideRequests.pickupName,
+        pickupLat: rideRequests.pickupLat,
+        pickupLng: rideRequests.pickupLng,
         createdAt: rideRequests.createdAt,
         rider: {
           id: users.id,
@@ -376,7 +406,13 @@ export async function getRideById(
 // ── 4. Request to Join Ride ──
 
 export async function requestToJoinRide(
-  rideId: string
+  rideId: string,
+  options?: {
+    note?: string;
+    pickupName?: string;
+    pickupLat?: number;
+    pickupLng?: number;
+  }
 ): Promise<JoinRideResult> {
   try {
     const user = await getOrCreateUser();
@@ -429,12 +465,19 @@ export async function requestToJoinRide(
       return { success: false, error: "You have already requested to join this ride." };
     }
 
+    // Trim note to 500 chars
+    const trimmedNote = options?.note?.trim().slice(0, 500) || null;
+
     // Insert ride request (no payment yet — payment happens after driver accepts)
     await db.insert(rideRequests).values({
       rideId,
       riderId: user.id,
       status: "pending",
       amountCents: ride.pricePerSeat,
+      note: trimmedNote,
+      pickupName: options?.pickupName || null,
+      pickupLat: options?.pickupLat ?? null,
+      pickupLng: options?.pickupLng ?? null,
     });
 
     publishEvent("ride.request.submitted", {
@@ -505,12 +548,22 @@ export async function confirmRidePayment(
 
     const ride = rideResults[0];
 
-    // Create Stripe payment hold
+    // Look up driver's Stripe Connect account (if set up)
+    const driverResults = await db
+      .select({ stripeConnectAccountId: users.stripeConnectAccountId })
+      .from(users)
+      .where(eq(users.id, ride.driverId))
+      .limit(1);
+
+    const driverConnectAccountId = driverResults[0]?.stripeConnectAccountId;
+
+    // Create Stripe payment hold (routes to driver if Connect is set up)
     const paymentIntent = await createPaymentHold(
       ride.pricePerSeat,
       user.email,
       ride.id,
-      user.id
+      user.id,
+      driverConnectAccountId
     );
 
     // Update request with payment intent
@@ -705,6 +758,102 @@ export async function rejectRideRequest(
   }
 }
 
+// ── 6b. Kick Rider (by driver, removes accepted passenger) ──
+
+export async function kickRider(
+  requestId: string
+): Promise<ActionResult> {
+  try {
+    const user = await getOrCreateUser();
+    if (!user) {
+      return { success: false, error: "You must be signed in." };
+    }
+
+    if (!requestId) {
+      return { success: false, error: "Request ID is required." };
+    }
+
+    // Fetch the request
+    const requestResults = await db
+      .select()
+      .from(rideRequests)
+      .where(eq(rideRequests.id, requestId))
+      .limit(1);
+
+    if (requestResults.length === 0) {
+      return { success: false, error: "Request not found." };
+    }
+
+    const request = requestResults[0];
+
+    if (request.status !== "accepted") {
+      return { success: false, error: "This rider is not currently on the ride." };
+    }
+
+    // Verify current user is the driver
+    const rideResults = await db
+      .select()
+      .from(rides)
+      .where(eq(rides.id, request.rideId))
+      .limit(1);
+
+    if (rideResults.length === 0) {
+      return { success: false, error: "Ride not found." };
+    }
+
+    const ride = rideResults[0];
+
+    if (ride.driverId !== user.id) {
+      return { success: false, error: "Only the driver can remove riders." };
+    }
+
+    // Cancel Stripe payment hold if present
+    if (request.stripePaymentIntentId) {
+      try {
+        await cancelPaymentHold(request.stripePaymentIntentId);
+      } catch (cancelErr) {
+        console.error(`Failed to cancel payment hold for request ${request.id}:`, cancelErr);
+      }
+    }
+
+    // Update request status to cancelled
+    await db
+      .update(rideRequests)
+      .set({ status: "cancelled" })
+      .where(eq(rideRequests.id, requestId));
+
+    // Free up the seat
+    const newAvailableSeats = ride.availableSeats + 1;
+    const rideUpdate: { availableSeats: number; status?: "open" | "full" | "in_progress" | "completed" | "cancelled" } = {
+      availableSeats: newAvailableSeats,
+    };
+
+    if (ride.status === "full") {
+      rideUpdate.status = "open";
+    }
+
+    await db
+      .update(rides)
+      .set(rideUpdate)
+      .where(eq(rides.id, ride.id));
+
+    // Notify the rider
+    await db.insert(notifications).values({
+      userId: request.riderId,
+      rideId: ride.id,
+      type: "rider_kicked",
+      message: `You have been removed from the ride from ${ride.originName} to ${ride.destName}. Any payment hold has been released.`,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("kickRider error:", err);
+    const message =
+      err instanceof Error ? err.message : "Failed to remove rider.";
+    return { success: false, error: message };
+  }
+}
+
 // ── 7. Cancel Ride Request (by rider) ──
 
 export async function cancelRideRequest(
@@ -795,7 +944,8 @@ export async function cancelRideRequest(
 // ── 8. Complete Ride ──
 
 export async function completeRide(
-  rideId: string
+  rideId: string,
+  driverLocation?: { lat: number; lng: number }
 ): Promise<ActionResult> {
   try {
     const user = await getOrCreateUser();
@@ -826,6 +976,25 @@ export async function completeRide(
 
     if (ride.status === "completed" || ride.status === "cancelled") {
       return { success: false, error: "This ride has already ended." };
+    }
+
+    // GPS verification: driver must be within ~1.5 miles of destination
+    if (!driverLocation) {
+      return { success: false, error: "Location access is required to complete a ride. Please enable location services." };
+    }
+
+    const distanceMiles = haversineDistance(
+      driverLocation.lat,
+      driverLocation.lng,
+      ride.destLat,
+      ride.destLng
+    );
+
+    if (distanceMiles > 1.5) {
+      return {
+        success: false,
+        error: `You're ${distanceMiles.toFixed(1)} miles from the destination. You must be within 1.5 miles to complete the ride.`,
+      };
     }
 
     // Update ride status to completed

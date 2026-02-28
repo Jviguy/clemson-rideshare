@@ -121,6 +121,37 @@ export default $config({
       runtime: "nodejs22.x",
       link: [database],
       timeout: "30 seconds",
+      permissions: [
+        { actions: ["ses:SendEmail", "ses:SendRawEmail"], resources: ["*"] },
+      ],
+      environment: {
+        SES_FROM_EMAIL: "jviguytwo2@gmail.com",
+        SITE_URL: "https://tigerride.clemson.edu",
+      },
+    });
+
+    // ── IAM Role for EventBridge Scheduler to invoke Lambda ──
+    const schedulerRole = new aws.iam.Role("SchedulerExecutionRole", {
+      assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [{
+          Effect: "Allow",
+          Principal: { Service: "scheduler.amazonaws.com" },
+          Action: "sts:AssumeRole",
+        }],
+      }),
+    });
+
+    new aws.iam.RolePolicy("SchedulerInvokePolicy", {
+      role: schedulerRole.id,
+      policy: $jsonStringify({
+        Version: "2012-10-17",
+        Statement: [{
+          Effect: "Allow",
+          Action: "lambda:InvokeFunction",
+          Resource: rideSchedulerFn.arn,
+        }],
+      }),
     });
 
     // ── Event Bus Subscriptions ──
@@ -131,6 +162,17 @@ export default $config({
         runtime: "nodejs22.x",
         link: [database],
         timeout: "30 seconds",
+        permissions: [
+          { actions: ["scheduler:CreateSchedule", "scheduler:DeleteSchedule"], resources: ["*"] },
+          { actions: ["iam:PassRole"], resources: [schedulerRole.arn] },
+          { actions: ["ses:SendEmail", "ses:SendRawEmail"], resources: ["*"] },
+        ],
+        environment: {
+          RIDE_SCHEDULER_ARN: rideSchedulerFn.arn,
+          SCHEDULER_ROLE_ARN: schedulerRole.arn,
+          SES_FROM_EMAIL: "jviguytwo2@gmail.com",
+          SITE_URL: "https://tigerride.clemson.edu",
+        },
       },
       {
         pattern: {

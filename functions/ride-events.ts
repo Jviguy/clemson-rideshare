@@ -3,16 +3,20 @@ import {
   SchedulerClient,
   CreateScheduleCommand,
 } from "@aws-sdk/client-scheduler";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import type { EventBridgeEvent } from "aws-lambda";
 
 const rdsClient = new RDSDataClient({});
 const schedulerClient = new SchedulerClient({});
+const sesClient = new SESClient({});
 
 const DATABASE_ARN = process.env.DATABASE_ARN || "";
 const DATABASE_SECRET_ARN = process.env.DATABASE_SECRET_ARN || "";
 const DATABASE_NAME = process.env.DATABASE_NAME || "clemson_rideshare";
 const SCHEDULER_TARGET_ARN = process.env.RIDE_SCHEDULER_ARN || "";
 const SCHEDULER_ROLE_ARN = process.env.SCHEDULER_ROLE_ARN || "";
+const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL || "";
+const SITE_URL = process.env.SITE_URL || "";
 
 async function executeSQL(
   sql: string,
@@ -32,6 +36,41 @@ async function executeSQL(
     })),
   });
   return rdsClient.send(command);
+}
+
+async function sendEmail(to: string, subject: string, htmlBody: string) {
+  if (!SES_FROM_EMAIL || !to) return;
+  try {
+    await sesClient.send(
+      new SendEmailCommand({
+        Source: SES_FROM_EMAIL,
+        Destination: { ToAddresses: [to] },
+        Message: {
+          Subject: { Data: subject },
+          Body: { Html: { Data: htmlBody } },
+        },
+      })
+    );
+    console.log(`Email sent to ${to}: ${subject}`);
+  } catch (err) {
+    console.error(`Failed to send email to ${to}:`, err);
+  }
+}
+
+async function getUserEmail(userId: string): Promise<string | undefined> {
+  const result = await executeSQL(
+    "SELECT email, name FROM users WHERE id = :userId",
+    [{ name: "userId", value: { stringValue: userId } }]
+  );
+  return result.records?.[0]?.[0]?.stringValue;
+}
+
+async function getUserName(userId: string): Promise<string> {
+  const result = await executeSQL(
+    "SELECT name FROM users WHERE id = :userId",
+    [{ name: "userId", value: { stringValue: userId } }]
+  );
+  return result.records?.[0]?.[0]?.stringValue || "A rider";
 }
 
 type RideEvent = {
@@ -98,6 +137,20 @@ export const handler = async (
             { name: "rideId", value: { stringValue: detail.rideId } },
           ]
         );
+
+        // Email the driver
+        const driverEmail = await getUserEmail(detail.driverId);
+        const riderName = detail.riderId ? await getUserName(detail.riderId) : "A rider";
+        if (driverEmail) {
+          await sendEmail(
+            driverEmail,
+            "New ride request on TigerRide",
+            `<h2>New Ride Request</h2>
+            <p><strong>${riderName}</strong> has requested to join your ride!</p>
+            <p><a href="${SITE_URL}/my-rides">View your rides</a> to accept or decline.</p>
+            <p style="color:#999;font-size:12px">TigerRide — Clemson University Rideshare</p>`
+          );
+        }
       }
       break;
     }
@@ -112,6 +165,19 @@ export const handler = async (
             { name: "rideId", value: { stringValue: detail.rideId } },
           ]
         );
+
+        // Email the rider
+        const riderEmail = await getUserEmail(detail.riderId);
+        if (riderEmail) {
+          await sendEmail(
+            riderEmail,
+            "Your ride request was accepted!",
+            `<h2>Request Accepted</h2>
+            <p>Your ride request has been accepted! Your payment hold will be captured when the ride is completed.</p>
+            <p><a href="${SITE_URL}/rides/${detail.rideId}">View ride details</a></p>
+            <p style="color:#999;font-size:12px">TigerRide — Clemson University Rideshare</p>`
+          );
+        }
       }
       break;
     }
@@ -120,12 +186,13 @@ export const handler = async (
       // Notify all riders that the ride is complete
       if (detail.rideId) {
         const ridersResult = await executeSQL(
-          "SELECT rider_id FROM ride_requests WHERE ride_id = :rideId AND status = 'accepted'",
+          "SELECT rr.rider_id, u.email FROM ride_requests rr JOIN users u ON u.id = rr.rider_id WHERE rr.ride_id = :rideId AND rr.status = 'accepted'",
           [{ name: "rideId", value: { stringValue: detail.rideId } }]
         );
 
         for (const record of ridersResult.records || []) {
           const riderId = record[0]?.stringValue;
+          const riderEmail = record[1]?.stringValue;
           if (riderId) {
             await executeSQL(
               "INSERT INTO notifications (id, user_id, ride_id, type, message, read) VALUES (gen_random_uuid(), :userId, :rideId, 'ride_completed', 'Your ride has been completed! Payment has been processed.', false)",
@@ -134,6 +201,17 @@ export const handler = async (
                 { name: "rideId", value: { stringValue: detail.rideId } },
               ]
             );
+
+            if (riderEmail) {
+              await sendEmail(
+                riderEmail,
+                "Ride completed — payment processed",
+                `<h2>Ride Completed</h2>
+                <p>Your ride has been completed and your payment has been processed.</p>
+                <p><a href="${SITE_URL}/my-rides">View your rides</a></p>
+                <p style="color:#999;font-size:12px">TigerRide — Clemson University Rideshare</p>`
+              );
+            }
           }
         }
       }

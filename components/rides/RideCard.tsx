@@ -30,6 +30,7 @@ interface RideCardProps {
     totalSeats: number;
     availableSeats: number;
     pricePerSeat: number;
+    description?: string | null;
     status: string;
   };
   driver?: {
@@ -118,6 +119,13 @@ export function RideCard({
             <User className="h-4 w-4 shrink-0 text-gray-400" />
             <span>{driver.name}</span>
           </div>
+        )}
+
+        {/* Description preview */}
+        {ride.description && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+            {ride.description}
+          </p>
         )}
 
         {/* Meta row */}
