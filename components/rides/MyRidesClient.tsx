@@ -3,28 +3,19 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { format } from "date-fns";
 import {
   Car,
   Navigation,
-  MapPin,
-  Calendar,
-  Users,
-  DollarSign,
-  ArrowRight,
-  User,
   XCircle,
+  DollarSign,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/Toast";
 import { PaymentModal } from "@/components/rides/PaymentModal";
 import { cancelRideRequest } from "@/lib/actions/rides";
+import { RideCard } from "@/components/rides/RideCard";
 
 // Types based on server action return shapes
 
@@ -77,29 +68,6 @@ interface MyRidesClientProps {
   driverRides: DriverRide[];
   riderRides: RiderRide[];
 }
-
-function formatPrice(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
-const statusBadgeVariant: Record<
-  string,
-  "default" | "success" | "warning" | "error" | "info"
-> = {
-  open: "success",
-  full: "warning",
-  in_progress: "info",
-  completed: "default",
-  cancelled: "error",
-};
-
-const statusLabel: Record<string, string> = {
-  open: "Open",
-  full: "Full",
-  in_progress: "In Progress",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
 
 const requestStatusBadgeVariant: Record<
   string,
@@ -186,89 +154,37 @@ export function MyRidesClient({
             actionHref="/post-ride"
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {driverRides.map((ride) => {
-              const departure =
-                typeof ride.departureTime === "string"
-                  ? new Date(ride.departureTime)
-                  : ride.departureTime;
-
-              return (
-                <Card
-                  key={ride.id}
-                  className="transition-shadow hover:shadow-md"
-                >
-                  <CardContent className="space-y-3">
-                    {/* Route */}
-                    <div className="flex items-start gap-2">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                      <p className="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate">
-                        {ride.originName}
-                      </p>
-                      <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                      <p className="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate">
-                        {ride.destName}
-                      </p>
-                    </div>
-
-                    {/* Date */}
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span>
-                        {format(departure, "EEE, MMM d 'at' h:mm a")}
-                      </span>
-                    </div>
-
-                    {/* Meta row */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <Users className="h-4 w-4 text-gray-400" />
-                          {ride.availableSeats}/{ride.totalSeats}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                          <DollarSign className="h-4 w-4 text-gray-400" />
-                          {formatPrice(ride.pricePerSeat)}
-                        </div>
-                      </div>
-                      <Badge
-                        variant={statusBadgeVariant[ride.status] ?? "default"}
-                      >
-                        {statusLabel[ride.status] ?? ride.status}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {driverRides.map((ride) => (
+              <RideCard key={ride.id} ride={ride} showMap={false}>
+                {/* Request counts + actions */}
+                <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3">
+                  <div className="flex items-center gap-3">
+                    {Number(ride.pendingRequests) > 0 && (
+                      <Badge variant="warning">
+                        {ride.pendingRequests} pending
                       </Badge>
-                    </div>
-
-                    {/* Request counts + actions */}
-                    <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                      <div className="flex items-center gap-3">
-                        {Number(ride.pendingRequests) > 0 && (
-                          <Badge variant="warning">
-                            {ride.pendingRequests} pending
-                          </Badge>
-                        )}
-                        {Number(ride.acceptedRequests) > 0 && (
-                          <Badge variant="success">
-                            {ride.acceptedRequests} confirmed
-                          </Badge>
-                        )}
-                        {Number(ride.pendingRequests) === 0 &&
-                          Number(ride.acceptedRequests) === 0 && (
-                            <span className="text-xs text-gray-400">
-                              No requests yet
-                            </span>
-                          )}
-                      </div>
-                      <Link href={`/rides/${ride.id}`}>
-                        <Button size="sm" variant="outline">
-                          Manage
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    )}
+                    {Number(ride.acceptedRequests) > 0 && (
+                      <Badge variant="success">
+                        {ride.acceptedRequests} confirmed
+                      </Badge>
+                    )}
+                    {Number(ride.pendingRequests) === 0 &&
+                      Number(ride.acceptedRequests) === 0 && (
+                        <span className="text-xs text-gray-400">
+                          No requests yet
+                        </span>
+                      )}
+                  </div>
+                  <Link href={`/rides/${ride.id}`}>
+                    <Button size="sm" variant="outline">
+                      Manage
+                    </Button>
+                  </Link>
+                </div>
+              </RideCard>
+            ))}
           </div>
         )}
       </TabsContent>
@@ -284,56 +200,22 @@ export function MyRidesClient({
             actionHref="/rides"
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {riderRides.map((item) => {
-              const departure =
-                typeof item.ride.departureTime === "string"
-                  ? new Date(item.ride.departureTime)
-                  : item.ride.departureTime;
-
               const canCancel =
                 item.requestStatus === "pending" ||
                 item.requestStatus === "accepted";
 
               return (
-                <Card
+                <RideCard
                   key={item.requestId}
-                  className="transition-shadow hover:shadow-md"
+                  ride={item.ride}
+                  driver={item.driver}
+                  showMap={false}
                 >
-                  <CardContent className="space-y-3">
-                    {/* Route */}
-                    <div className="flex items-start gap-2">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                      <p className="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate">
-                        {item.ride.originName}
-                      </p>
-                      <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                      <p className="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate">
-                        {item.ride.destName}
-                      </p>
-                    </div>
-
-                    {/* Date */}
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span>
-                        {format(departure, "EEE, MMM d 'at' h:mm a")}
-                      </span>
-                    </div>
-
-                    {/* Driver */}
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <User className="h-4 w-4 text-gray-400" />
-                      <span>{item.driver.name}</span>
-                    </div>
-
-                    {/* Meta row */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                        <DollarSign className="h-4 w-4 text-gray-400" />
-                        {formatPrice(item.ride.pricePerSeat)}
-                      </div>
+                  <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 mt-1 pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Status:</span>
                       <Badge
                         variant={
                           requestStatusBadgeVariant[item.requestStatus] ??
@@ -344,14 +226,12 @@ export function MyRidesClient({
                           item.requestStatus}
                       </Badge>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                    <div className="flex items-center gap-3">
                       <Link
                         href={`/rides/${item.ride.id}`}
                         className="text-sm font-medium text-clemson-orange hover:text-clemson-orange-dark transition-colors"
                       >
-                        View ride
+                        View
                       </Link>
                       <div className="flex items-center gap-2">
                         {item.requestStatus === "accepted" && !item.hasPaid && (
@@ -387,8 +267,8 @@ export function MyRidesClient({
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </RideCard>
               );
             })}
           </div>
@@ -424,11 +304,11 @@ function EmptyState({
   actionHref: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-16 px-6 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 py-16 px-6 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
         <Icon className="h-8 w-8 text-gray-400" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-gray-500">{description}</p>
       <Link href={actionHref}>
         <Button variant="primary" className="mt-6">

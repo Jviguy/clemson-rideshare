@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  labelClassName?: string;
   error?: string;
   helperText?: string;
   iconLeft?: ReactNode;
@@ -11,7 +12,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, helperText, iconLeft, iconRight, className, id, ...props },
+    { label, labelClassName, error, helperText, iconLeft, iconRight, className, id, ...props },
     ref
   ) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
@@ -21,7 +22,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-gray-700"
+            className={clsx("text-sm font-medium text-foreground/80", labelClassName)}
           >
             {label}
           </label>
@@ -36,14 +37,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={clsx(
-              "w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900",
-              "placeholder:text-gray-400",
+              "w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground",
+              "placeholder:text-gray-400 dark:placeholder:text-gray-500",
               "transition-colors duration-150",
               "focus:outline-none focus:ring-2 focus:ring-offset-0",
               error
                 ? "border-error focus:border-error focus:ring-error/30"
-                : "border-gray-300 focus:border-clemson-orange focus:ring-clemson-orange/30",
-              "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500",
+                : "border-gray-200 dark:border-gray-800 focus:border-clemson-orange focus:ring-clemson-orange/30",
+              "disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500",
               iconLeft && "pl-10",
               iconRight && "pr-10",
               className

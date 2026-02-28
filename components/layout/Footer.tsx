@@ -39,7 +39,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-8 border-t border-white/20 pt-6 text-center">
           <p className="text-sm text-white/60">
-            Built for CUhackit 2025
+            TigerRide is not endorsed or has any affiliation with Clemson University.
           </p>
         </div>
       </div>

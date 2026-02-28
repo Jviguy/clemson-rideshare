@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -115,21 +115,21 @@ export function PaymentModal({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const stripePromiseRef = useRef<Promise<Stripe | null> | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
 
   const initPayment = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     // Lazily load Stripe with the key from the server
-    if (!stripePromiseRef.current) {
+    if (!stripePromise) {
       const key = await getStripePublishableKey();
       if (!key) {
         setError("Stripe is not configured. Please contact support.");
         setLoading(false);
         return;
       }
-      stripePromiseRef.current = loadStripe(key);
+      setStripePromise(loadStripe(key));
     }
 
     const result = await confirmRidePayment(requestId);
@@ -141,7 +141,7 @@ export function PaymentModal({
 
     setClientSecret(result.clientSecret);
     setLoading(false);
-  }, [requestId]);
+  }, [requestId, stripePromise]);
 
   // Reset state when modal closes
   function handleClose() {
@@ -151,9 +151,11 @@ export function PaymentModal({
     onClose();
   }
 
-  if (open && !clientSecret && !loading && !error) {
-    initPayment();
-  }
+  useEffect(() => {
+    if (open && !clientSecret && !loading && !error) {
+      initPayment();
+    }
+  }, [open, clientSecret, loading, error, initPayment]);
 
   const priceLabel = `$${(pricePerSeat / 100).toFixed(2)}`;
 
@@ -182,9 +184,9 @@ export function PaymentModal({
         </div>
       )}
 
-      {clientSecret && stripePromiseRef.current && (
+      {clientSecret && stripePromise && (
         <Elements
-          stripe={stripePromiseRef.current}
+          stripe={stripePromise}
           options={{
             clientSecret,
             appearance: {

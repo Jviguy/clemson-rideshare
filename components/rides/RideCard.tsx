@@ -77,13 +77,13 @@ export function RideCard({
       : ride.departureTime;
 
   const content = (
-    <Card className="group overflow-hidden transition-shadow hover:shadow-md">
+    <Card className="group overflow-hidden transition-shadow hover:shadow-md bg-gray-50/50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800">
       {showMap && (
         <div className="pointer-events-none">
           <RideMap
             origin={{ lat: ride.originLat, lng: ride.originLng }}
             destination={{ lat: ride.destLat, lng: ride.destLng }}
-            className="h-36 rounded-none"
+            className="h-36 rounded-none border-b border-gray-200 dark:border-gray-800"
           />
         </div>
       )}
@@ -93,28 +93,28 @@ export function RideCard({
         <div className="flex items-start gap-2">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-foreground truncate">
               {ride.originName}
             </p>
           </div>
           <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-foreground truncate">
               {ride.destName}
             </p>
           </div>
         </div>
 
         {/* Date & Time */}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
           <span>{format(departure, "EEE, MMM d 'at' h:mm a")}</span>
         </div>
 
         {/* Driver */}
         {driver && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <User className="h-4 w-4 shrink-0 text-gray-400" />
             <span>{driver.name}</span>
           </div>
@@ -124,7 +124,7 @@ export function RideCard({
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-4">
             {/* Seats */}
-            <div className="flex items-center gap-1.5 text-sm text-gray-600">
+            <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
               <Users className="h-4 w-4 text-gray-400" />
               <span>
                 {ride.availableSeats}/{ride.totalSeats} seats
@@ -132,7 +132,7 @@ export function RideCard({
             </div>
 
             {/* Price */}
-            <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
               <DollarSign className="h-4 w-4 text-gray-400" />
               <span>{formatPrice(ride.pricePerSeat)}</span>
             </div>
